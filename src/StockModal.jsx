@@ -1,0 +1,70 @@
+import { useState } from 'react';
+import { X, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+
+export default function StockModal({ isOpen, onClose, onConfirm, item, type }) {
+  const [qty, setQty] = useState(1);
+  const [reason, setReason] = useState('');
+
+  if (!isOpen || !item) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (qty <= 0) return alert("Quantity must be greater than 0");
+    if (type === 'OUT' && qty > item.qty) return alert("Not enough stock available!");
+    
+    onConfirm(item, type, Number(qty), reason);
+    setQty(1);
+    setReason('');
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-sm overflow-hidden">
+        <div className="flex justify-between items-center p-5 border-b border-gray-200">
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            {type === 'IN' ? <ArrowDownLeft className="text-green-600"/> : <ArrowUpRight className="text-red-600"/>}
+            Stock {type}
+          </h2>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-full"><X className="w-5 h-5 text-gray-500" /></button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+            <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Item</p>
+            <p className="font-bold text-gray-800">{item.name}</p>
+            <p className="text-sm text-gray-600">Current Stock: <span className="font-bold">{item.qty} {item.unit}</span></p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase">Quantity to {type}</label>
+            <input 
+              type="number" 
+              min="1" 
+              value={qty} 
+              onChange={(e) => setQty(e.target.value)} 
+              className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-green-800 outline-none" 
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase">Reason / Note (Optional)</label>
+            <input 
+              type="text" 
+              value={reason} 
+              onChange={(e) => setReason(e.target.value)} 
+              className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-green-800 outline-none" 
+              placeholder={type === 'IN' ? "e.g. New delivery from supplier" : "e.g. Used for Jollibee Project"}
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+            <button type="submit" className={`px-4 py-2 text-sm font-medium text-white rounded-lg ${type === 'IN' ? 'bg-green-700 hover:bg-green-800' : 'bg-red-600 hover:bg-red-700'}`}>
+              Confirm {type}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
