@@ -4,6 +4,7 @@ import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc } from "fireb
 import { createUserWithEmailAndPassword, getAuth } from "firebase/auth"; 
 import { db } from './firebase'; 
 import UserModal from './UserModal';
+import ConfirmModal from './ConfirmModal';
 import Toast from './Toast';
 
 export default function UsersPage() {
@@ -12,6 +13,9 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState(null);
   const [toast, setToast] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "users"), (snapshot) => {
@@ -24,19 +28,12 @@ export default function UsersPage() {
     setIsSaving(true);
     try {
       if (editingUser) {
-        // UPDATE ROLE AT NAME SA FIRESTORE
         const userRef = doc(db, "users", editingUser.id);
-        await updateDoc(userRef, { 
-          name: formData.name,
-          role: formData.role 
-        });
+        await updateDoc(userRef, { name: formData.name, role: formData.role });
         setToast({ message: 'User updated successfully!', type: 'success' });
       } else {
-        // CREATE NEW USER SA FIREBASE AUTH
         const auth = getAuth();
         const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-        
-        // SAVE ROLE AT NAME SA FIRESTORE
         await addDoc(collection(db, "users"), {
           name: formData.name,
           email: formData.email,
@@ -59,16 +56,20 @@ export default function UsersPage() {
     }
   };
 
-  const handleDelete = async (id, name) => {
-    if (window.confirm(`Remove user "${name}" from the system?`)) {
-      try {
-        await deleteDoc(doc(db, "users", id));
-        setToast({ message: 'User removed.', type: 'success' });
-      } catch (error) {
-        console.error("Error deleting user: ", error);
-        setToast({ message: 'Failed to delete user.', type: 'error' });
-      }
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+    try {
+      await deleteDoc(doc(db, "users", userToDelete.id));
+      setToast({ message: 'User removed.', type: 'success' });
+    } catch (error) {
+      console.error("Error deleting user: ", error);
+      setToast({ message: 'Failed to delete user.', type: 'error' });
     }
+  };
+
+  const handleDeleteClick = (id, name) => {
+    setUserToDelete({ id, name });
+    setIsConfirmOpen(true);
   };
 
   const openAddModal = () => { setEditingUser(null); setIsModalOpen(true); };
@@ -123,16 +124,13 @@ export default function UsersPage() {
                     <button onClick={() => openEditModal(user)} className="p-1.5 text-gray-400 hover:text-blue-600 rounded transition-colors">
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDelete(user.id, user.name)} className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors">
+                    <button onClick={() => handleDeleteClick(user.id, user.name)} className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </td>
               </tr>
             ))}
-            {users.length === 0 && (
-               <tr><td colSpan="5" className="p-8 text-center text-gray-500 dark:text-gray-400">No users found in database.</td></tr>
-            )}
           </tbody>
         </table>
       </div>
@@ -146,13 +144,16 @@ export default function UsersPage() {
         isSaving={isSaving}
       />
 
-      {toast && (
-        <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast(null)} 
-        />
-      )}
+      <ConfirmModal 
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={confirmDelete}
+        title="Remove User"
+        message={`Are you sure you want to remove "${userToDelete?.name}" from the system?`}
+        confirmText="Remove User"
+      />
+
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

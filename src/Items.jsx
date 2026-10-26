@@ -8,6 +8,7 @@ import QRScanner from './QRScanner';
 import QRCodeModal from './QRCodeModal';
 import PrintSlipModal from './PrintSlipModal';
 import Toast from './Toast';
+import ConfirmModal from './ConfirmModal'; // BAGONG IMPORT
 
 export default function Items({ items, defaultFilterLowStock, currentUserName, userRole, projects }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,6 +28,10 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
 
   const [toast, setToast] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // BAGONG STATES PARA SA CONFIRM MODAL
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const calculateTotalValue = () => {
     return items.reduce((total, item) => total + (item.qty * item.price), 0).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
@@ -66,22 +71,21 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
     }
   };
 
+  // BAGONG FUNCTION PARA SA DELETE (Diretso sa delete, ang ConfirmModal ang bahala)
   const handleDeleteItem = async (id, name) => {
-    if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
-      try {
-        await deleteDoc(doc(db, "items", id));
-        await addDoc(collection(db, "logs"), {
-          date: new Date().toLocaleString(),
-          timestamp: new Date().getTime(),
-          user: currentUserName,
-          action: 'DELETE_ITEM',
-          details: `Deleted item: ${name}`
-        });
-        setToast({ message: 'Item deleted.', type: 'success' });
-      } catch (error) {
-        console.error("Error deleting item: ", error);
-        setToast({ message: 'Failed to delete item.', type: 'error' });
-      }
+    try {
+      await deleteDoc(doc(db, "items", id));
+      await addDoc(collection(db, "logs"), {
+        date: new Date().toLocaleString(),
+        timestamp: new Date().getTime(),
+        user: currentUserName,
+        action: 'DELETE_ITEM',
+        details: `Deleted item: ${name}`
+      });
+      setToast({ message: 'Item deleted.', type: 'success' });
+    } catch (error) {
+      console.error("Error deleting item: ", error);
+      setToast({ message: 'Failed to delete item.', type: 'error' });
     }
   };
 
@@ -213,23 +217,16 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
       </div>
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-x-auto transition-colors">
-        {/* MIN-W AY BINABAWASAN PARA HINDI MASYADONG MALAPAD SA MOBILE */}
         <table className="w-full text-left border-collapse min-w-[400px] md:min-w-[800px]">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <th className="p-4 font-semibold">Item</th>
-              
-              {/* HIDDEN SA MOBILE, VISIBLE SA DESKTOP */}
               <th className="p-4 font-semibold hidden md:table-cell">Category</th>
               <th className="p-4 font-semibold hidden lg:table-cell">Spec</th>
-              
               <th className="p-4 font-semibold text-right">Stock</th>
-              
               <th className="p-4 font-semibold text-right hidden md:table-cell">Min</th>
               <th className="p-4 font-semibold text-right hidden lg:table-cell">Unit Price</th>
               <th className="p-4 font-semibold text-right hidden md:table-cell">Value</th>
-              
-              {/* STICKY ACTIONS COLUMN HEADER */}
               <th className="p-4 font-semibold text-center sticky right-0 bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.1)]">Actions</th>
             </tr>
           </thead>
@@ -241,23 +238,16 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
                     <p className="font-semibold text-gray-800 dark:text-white text-sm">{item.name}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</p>
                   </td>
-                  
-                  {/* HIDDEN SA MOBILE */}
                   <td className="p-4 hidden md:table-cell">
                     <span className="inline-block px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-md border border-gray-200 dark:border-gray-600 whitespace-nowrap">
                       {item.category}
                     </span>
                   </td>
                   <td className="p-4 text-sm text-gray-600 dark:text-gray-400 hidden lg:table-cell">{item.spec}</td>
-                  
                   <td className="p-4 text-right text-sm font-bold text-gray-800 dark:text-white">{item.qty}</td>
-                  
-                  {/* HIDDEN SA MOBILE */}
                   <td className="p-4 text-right text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">{item.min}</td>
                   <td className="p-4 text-right text-sm text-gray-800 dark:text-white hidden lg:table-cell">₱{item.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                   <td className="p-4 text-right text-sm font-bold text-gray-800 dark:text-white hidden md:table-cell">₱{(item.qty * item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                  
-                  {/* STICKY ACTIONS COLUMN DATA */}
                   <td className="p-4 text-center sticky right-0 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.1)]">
                     <div className="flex items-center justify-center gap-1">
                       <button onClick={() => openQRModal(item)} title="View QR Code" className="p-1.5 text-gray-400 hover:text-purple-600 rounded transition-colors">
@@ -271,7 +261,8 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
                       {userRole === 'admin' && (
                         <>
                           <button onClick={() => openEditModal(item)} className="p-1.5 text-gray-400 hover:text-blue-600 rounded transition-colors"><Edit className="w-4 h-4" /></button>
-                          <button onClick={() => handleDeleteItem(item.id, item.name)} className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors"><Trash2 className="w-4 h-4" /></button>
+                          {/* BAGONG DELETE BUTTON NA NAGBUBUKAS NG CONFIRM MODAL */}
+                          <button onClick={() => { setItemToDelete({id: item.id, name: item.name}); setIsConfirmOpen(true); }} className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors"><Trash2 className="w-4 h-4" /></button>
                         </>
                       )}
                     </div>
@@ -316,6 +307,16 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
         qty={slipData.qty} 
         projectName={slipData.projectName} 
         userName={currentUserName} 
+      />
+
+      {/* BAGONG CONFIRM MODAL */}
+      <ConfirmModal 
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={() => handleDeleteItem(itemToDelete?.id, itemToDelete?.name)}
+        title="Delete Item"
+        message={`Are you sure you want to delete "${itemToDelete?.name}"? This action cannot be undone.`}
+        confirmText="Delete Item"
       />
 
       {toast && (

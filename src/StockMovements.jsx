@@ -2,11 +2,18 @@ import { useState } from 'react';
 import { Search, ArrowDownLeft, ArrowUpRight, Calendar, Trash2 } from 'lucide-react';
 import { doc, deleteDoc, updateDoc, increment } from "firebase/firestore";
 import { db } from './firebase';
+import ConfirmModal from './ConfirmModal';
+import Toast from './Toast';
 
 export default function StockMovements({ movements, items, projects, userRole, onMovementDeleted }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // States para sa Confirm Modal at Toast
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [movementToReverse, setMovementToReverse] = useState(null);
+  const [toast, setToast] = useState(null);
 
   const filteredMovements = (movements || [])
     .filter(move => {
@@ -23,12 +30,11 @@ export default function StockMovements({ movements, items, projects, userRole, o
     })
     .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-  const handleDeleteMovement = async (move) => {
-    if (!window.confirm(`Are you sure you want to REVERSE this ${move.type} transaction for "${move.item}"? This will adjust the stock and project cost.`)) {
-      return;
-    }
-
+  const confirmReverse = async () => {
+    if (!movementToReverse) return;
     setIsDeleting(true);
+    const move = movementToReverse;
+    
     try {
       const itemToAdjust = items.find(i => i.name === move.item);
       if (itemToAdjust) {
@@ -53,14 +59,19 @@ export default function StockMovements({ movements, items, projects, userRole, o
 
       await deleteDoc(doc(db, "movements", move.id));
       
+      setToast({ message: 'Transaction reversed successfully!', type: 'success' });
       if (onMovementDeleted) onMovementDeleted();
-      alert("Transaction reversed successfully!");
     } catch (error) {
       console.error("Error reversing movement: ", error);
-      alert("Failed to reverse transaction.");
+      setToast({ message: 'Failed to reverse transaction.', type: 'error' });
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleReverseClick = (move) => {
+    setMovementToReverse(move);
+    setIsConfirmOpen(true);
   };
 
   return (
@@ -107,7 +118,6 @@ export default function StockMovements({ movements, items, projects, userRole, o
         )}
       </div>
 
-      {/* TABLE - Responsive wrapper */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-x-auto transition-colors">
         <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
@@ -145,7 +155,7 @@ export default function StockMovements({ movements, items, projects, userRole, o
                   {userRole === 'admin' && (
                     <td className="p-4 text-center">
                       <button 
-                        onClick={() => handleDeleteMovement(move)}
+                        onClick={() => handleReverseClick(move)}
                         disabled={isDeleting}
                         className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors disabled:opacity-50"
                         title="Reverse Transaction"
@@ -164,6 +174,17 @@ export default function StockMovements({ movements, items, projects, userRole, o
           </tbody>
         </table>
       </div>
+
+      <ConfirmModal 
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={confirmReverse}
+        title="Reverse Transaction"
+        message={`Are you sure you want to REVERSE this ${movementToReverse?.type} transaction for "${movementToReverse?.item}"? This will adjust the stock and project cost.`}
+        confirmText="Reverse Transaction"
+      />
+
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }
