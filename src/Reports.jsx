@@ -3,7 +3,6 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 
 export default function Reports({ items, movements }) {
   
-  // Dynamic Category Data
   const categoryData = items.reduce((acc, item) => {
     const existing = acc.find(a => a.name === item.category);
     if (existing) {
@@ -14,27 +13,42 @@ export default function Reports({ items, movements }) {
     return acc;
   }, []);
 
-  // Dynamic Top Items
   const topItemsData = [...items]
     .sort((a, b) => (b.qty * b.price) - (a.qty * a.price))
     .slice(0, 10)
     .map((item, index) => ({ name: `${index + 1}. ${item.name}`, value: (item.qty * item.price) }));
 
-  // Bilang ng IN at OUT transactions
   const stockInCount = movements?.filter(m => m.type === 'IN').length || 0;
   const stockOutCount = movements?.filter(m => m.type === 'OUT').length || 0;
 
   const handleExportCSV = () => {
-    let csvContent = "Category,Value (PHP)\n";
+    const date = new Date().toLocaleString();
+    let csvContent = "";
+
+    // --- HEADER ---
+    csvContent += "LRT DECOR PRODUCTS - INVENTORY REPORT\n";
+    csvContent += `Generated on: ${date}\n`;
+    csvContent += `Total Items: ${items.length}\n`;
+    csvContent += `Total Value: PHP ${items.reduce((total, item) => total + (item.qty * item.price), 0).toLocaleString()}\n`;
+    csvContent += `Stock In Transactions: ${stockInCount}\n`;
+    csvContent += `Stock Out Transactions: ${stockOutCount}\n\n`;
+
+    // --- CATEGORY SECTION ---
+    csvContent += "INVENTORY VALUE BY CATEGORY\n";
+    csvContent += "Category,Value (PHP)\n";
     categoryData.forEach(row => {
-      csvContent += `"${row.name}",${row.value}\n`;
+      csvContent += `"${row.name}","${row.value.toLocaleString()}"\n`;
     });
+    csvContent += "\n";
 
-    csvContent += "\n\nTop Highest Value Items,Value (PHP)\n";
+    // --- TOP ITEMS SECTION ---
+    csvContent += "TOP 10 HIGHEST VALUE ITEMS\n";
+    csvContent += "Item Name,Value (PHP)\n";
     topItemsData.forEach(row => {
-      csvContent += `"${row.name}",${row.value}\n`;
+      csvContent += `"${row.name}","${row.value.toLocaleString()}"\n`;
     });
 
+    // --- DOWNLOAD ---
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -49,8 +63,8 @@ export default function Reports({ items, movements }) {
     <div className="p-8 space-y-6">
       <div className="flex justify-between items-end">
         <div>
-          <p className="text-xs text-gray-500 font-semibold tracking-wider uppercase mb-1">Insights</p>
-          <h1 className="text-3xl font-bold text-gray-900">Reports</h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold tracking-wider uppercase mb-1">Insights</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Reports</h1>
         </div>
         <button onClick={handleExportCSV} className="flex items-center gap-2 bg-[#0e2a21] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#184536] transition-colors">
           <Download className="w-4 h-4" /> Export CSV
@@ -58,27 +72,27 @@ export default function Reports({ items, movements }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Total Items</p>
-          <h2 className="text-2xl font-bold text-gray-900 mt-1">{items.length}</h2>
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Items</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{items.length}</h2>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Total Value</p>
-          <h2 className="text-2xl font-bold text-gray-900 mt-1">₱{items.reduce((total, item) => total + (item.qty * item.price), 0).toLocaleString()}</h2>
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Value</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">₱{items.reduce((total, item) => total + (item.qty * item.price), 0).toLocaleString()}</h2>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Stock IN Transactions</p>
-          <h2 className="text-2xl font-bold text-gray-900 mt-1">{stockInCount}</h2>
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Stock IN Transactions</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stockInCount}</h2>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Stock OUT Transactions</p>
-          <h2 className="text-2xl font-bold text-gray-900 mt-1">{stockOutCount}</h2>
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Stock OUT Transactions</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stockOutCount}</h2>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-          <h3 className="font-bold text-gray-800 mb-6">Inventory Value by Category</h3>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <h3 className="font-bold text-gray-800 dark:text-white mb-6">Inventory Value by Category</h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={categoryData} layout="vertical" margin={{ top: 0, right: 0, left: 40, bottom: 0 }}>
@@ -95,8 +109,8 @@ export default function Reports({ items, movements }) {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-          <h3 className="font-bold text-gray-800 mb-6">Top 10 Highest Value Items</h3>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <h3 className="font-bold text-gray-800 dark:text-white mb-6">Top 10 Highest Value Items</h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topItemsData} layout="vertical" margin={{ top: 0, right: 30, left: 60, bottom: 0 }}>
