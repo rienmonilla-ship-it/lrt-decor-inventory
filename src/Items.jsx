@@ -8,10 +8,12 @@ import QRScanner from './QRScanner';
 import QRCodeModal from './QRCodeModal';
 import PrintSlipModal from './PrintSlipModal';
 import Toast from './Toast';
-import ConfirmModal from './ConfirmModal'; // BAGONG IMPORT
+import ConfirmModal from './ConfirmModal';
 
 export default function Items({ items, defaultFilterLowStock, currentUserName, userRole, projects }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('All categories'); // BAGONG STATE
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
 
@@ -29,7 +31,6 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
   const [toast, setToast] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // BAGONG STATES PARA SA CONFIRM MODAL
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
@@ -71,7 +72,6 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
     }
   };
 
-  // BAGONG FUNCTION PARA SA DELETE (Diretso sa delete, ang ConfirmModal ang bahala)
   const handleDeleteItem = async (id, name) => {
     try {
       await deleteDoc(doc(db, "items", id));
@@ -165,12 +165,18 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
     }
   };
 
+  // BAGONG FILTERING LOGIC (Kasama ang Category)
   const filteredItems = items
-    .filter(item => 
-      (item.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.spec || '').toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter(item => {
+      const matchSearch = 
+        (item.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.spec || '').toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchCategory = filterCategory === 'All categories' || item.category === filterCategory;
+
+      return matchSearch && matchCategory;
+    })
     .sort((a, b) => {
       if (defaultFilterLowStock) {
         const aLow = a.qty <= a.min;
@@ -207,11 +213,18 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search className="h-4 w-4 text-gray-400" /></div>
           <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-800 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" placeholder="Search items or specs..." />
         </div>
-        <select className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 w-full sm:w-auto">
+        {/* BAGONG onChange PARA SA DROPDOWN */}
+        <select 
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+          className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 w-full sm:w-auto"
+        >
           <option>All categories</option>
           <option>Structural & Track Systems</option>
           <option>Mechanisms & Hardware</option>
           <option>Fasteners & Fixings</option>
+          <option>Sealants, Insulation & Finishing</option>
+          <option>Tools & Consumables</option>
           <option>Services & Installations</option>
         </select>
       </div>
@@ -261,7 +274,6 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
                       {userRole === 'admin' && (
                         <>
                           <button onClick={() => openEditModal(item)} className="p-1.5 text-gray-400 hover:text-blue-600 rounded transition-colors"><Edit className="w-4 h-4" /></button>
-                          {/* BAGONG DELETE BUTTON NA NAGBUBUKAS NG CONFIRM MODAL */}
                           <button onClick={() => { setItemToDelete({id: item.id, name: item.name}); setIsConfirmOpen(true); }} className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors"><Trash2 className="w-4 h-4" /></button>
                         </>
                       )}
@@ -309,7 +321,6 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
         userName={currentUserName} 
       />
 
-      {/* BAGONG CONFIRM MODAL */}
       <ConfirmModal 
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
