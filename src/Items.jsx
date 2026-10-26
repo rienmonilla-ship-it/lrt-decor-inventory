@@ -32,7 +32,7 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
   const [isSaving, setIsSaving] = useState(false);
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState(null);
+  const [itemToDelete, setItemToDelete] = useState(null); // TAMANG SPELLING
 
   const calculateTotalValue = () => {
     return items.reduce((total, item) => total + (item.qty * item.price), 0).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
@@ -72,18 +72,14 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
     }
   };
 
-  // BAGONG LOGIC PARA SA UNDO DELETE
   const handleDeleteItem = async (id, name) => {
     try {
-      // 1. Kunin muna ang item data bago i-delete (para may backup kung i-undo)
       const itemRef = doc(db, "items", id);
       const itemSnapshot = await getDoc(itemRef);
       const itemData = itemSnapshot.data();
 
-      // 2. I-delete sa Firebase
       await deleteDoc(itemRef);
       
-      // 3. I-log ang action
       await addDoc(collection(db, "logs"), {
         date: new Date().toLocaleString(),
         timestamp: new Date().getTime(),
@@ -92,14 +88,12 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
         details: `Deleted item: ${name}`
       });
 
-      // 4. Magpakita ng toast na may "Undo" button
       setToast({ 
         message: `Deleted "${name}".`, 
         type: 'info',
         actionLabel: 'Undo',
         onAction: async () => {
           try {
-            // Ibalik ang item sa Firebase
             await addDoc(collection(db, "items"), itemData);
             setToast({ message: 'Item restored successfully!', type: 'success' });
           } catch {
