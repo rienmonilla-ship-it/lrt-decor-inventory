@@ -1,20 +1,30 @@
 import { Scanner } from '@yudiel/react-qr-scanner';
-import { X, CameraOff } from 'lucide-react';
+import { X } from 'lucide-react';
+import { useRef, useEffect } from 'react';
 
 export default function QRScanner({ isOpen, onClose, onScan }) {
+  const hasScanned = useRef(false); // ITO ANG LOCK
+
+  useEffect(() => {
+    if (isOpen) {
+      hasScanned.current = false; // I-reset ang lock kapag binuksan
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  // Ito ang magiging function kapag may na-scan
   const handleScan = (detectedCodes) => {
+    if (hasScanned.current) return; // Kapag na-scan na, wag nang pansinin ang iba
+
     if (detectedCodes && detectedCodes.length > 0) {
-      onScan(detectedCodes[0].rawValue); // Kunin ang value ng na-scan
+      hasScanned.current = true; // I-lock agad
+      onScan(detectedCodes[0].rawValue);
+      onClose(); // Isara agad ang scanner
     }
   };
 
-  // Function para sa error handling
   const handleError = (error) => {
     console.error("Scanner Error:", error);
-    // Dito natin pwedeng ipakita ang error message
   };
 
   return (
@@ -28,13 +38,12 @@ export default function QRScanner({ isOpen, onClose, onScan }) {
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">Scan Item QR</h2>
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-4">Itutok ang camera sa QR code ng item.</p>
           
-          {/* Ang Scanner component na mismo ang humahawak sa camera */}
           <div className="w-full rounded-lg overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 bg-black">
             <Scanner 
               onScan={handleScan} 
               onError={handleError}
               components={{
-                finder: false, // Itago ang default na finder UI para mas malinis
+                finder: false, 
               }}
             />
           </div>

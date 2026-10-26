@@ -149,10 +149,17 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
     setIsQRModalOpen(true);
   };
 
+  // AYOS NA LOGIC PARA SA SCANNER
   const handleScanSuccess = (scannedId) => {
     const item = items.find(i => i.id === scannedId);
     if (item) {
-      openStockModal(item, 'IN');
+      // 1. Isara muna ang scanner
+      setIsScannerOpen(false); 
+      
+      // 2. Mag-antay ng 100ms bago buksan ang Stock Modal para smooth ang transition
+      setTimeout(() => {
+        openStockModal(item, 'IN');
+      }, 100);
     } else {
       setToast({ message: 'Item not found! QR code may be invalid.', type: 'error' });
     }
@@ -220,7 +227,8 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
               <th className="p-4 font-semibold text-right">Min</th>
               <th className="p-4 font-semibold text-right">Unit Price</th>
               <th className="p-4 font-semibold text-right">Value</th>
-              <th className="p-4 font-semibold text-center">Actions</th>
+              {/* STICKY ACTIONS COLUMN HEADER */}
+              <th className="p-4 font-semibold text-center sticky right-0 bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.1)]">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -237,7 +245,9 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
                   <td className="p-4 text-right text-sm text-gray-500 dark:text-gray-400">{item.min}</td>
                   <td className="p-4 text-right text-sm text-gray-800 dark:text-white">₱{item.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                   <td className="p-4 text-right text-sm font-bold text-gray-800 dark:text-white">₱{(item.qty * item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                  <td className="p-4 text-center">
+                  
+                  {/* STICKY ACTIONS COLUMN DATA */}
+                  <td className="p-4 text-center sticky right-0 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.1)]">
                     <div className="flex items-center justify-center gap-1">
                       <button onClick={() => openQRModal(item)} title="View QR Code" className="p-1.5 text-gray-400 hover:text-purple-600 rounded transition-colors">
                         <QrCode className="w-4 h-4" />
@@ -275,7 +285,6 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
       
       <StockModal isOpen={isStockModalOpen} onClose={() => setIsStockModalOpen(false)} onConfirm={handleStockConfirm} item={stockItem} type={stockType} projects={projects} />
       
-      {/* BAGONG KEY PROP PARA SA QRSCANNER */}
       <QRScanner 
         key={isScannerOpen ? 'open' : 'closed'}
         isOpen={isScannerOpen} 
