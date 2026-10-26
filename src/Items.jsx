@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Search, Plus, Edit, Trash2, ArrowDownLeft, ArrowUpRight, ScanLine, QrCode } from 'lucide-react';
-import { collection, addDoc, updateDoc, deleteDoc, doc, increment } from "firebase/firestore"; 
+import { Search, Plus, Edit, Trash2, ArrowDownLeft, ArrowUpRight, ScanLine, QrCode } from 'lucide-react'; // Tinanggal ang Undo2
+import { collection, addDoc, updateDoc, deleteDoc, doc, increment, getDoc } from "firebase/firestore"; 
 import { db } from './firebase';
 import ItemModal from './ItemModal'; 
 import StockModal from './StockModal';
@@ -12,7 +12,7 @@ import ConfirmModal from './ConfirmModal';
 
 export default function Items({ items, defaultFilterLowStock, currentUserName, userRole, projects }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('All categories'); // BAGONG STATE
+  const [filterCategory, setFilterCategory] = useState('All categories');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -74,7 +74,12 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
 
   const handleDeleteItem = async (id, name) => {
     try {
-      await deleteDoc(doc(db, "items", id));
+      const itemRef = doc(db, "items", id);
+      const itemSnapshot = await getDoc(itemRef);
+      const itemData = itemSnapshot.data();
+
+      await deleteDoc(itemRef);
+      
       await addDoc(collection(db, "logs"), {
         date: new Date().toLocaleString(),
         timestamp: new Date().getTime(),
@@ -82,7 +87,21 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
         action: 'DELETE_ITEM',
         details: `Deleted item: ${name}`
       });
-      setToast({ message: 'Item deleted.', type: 'success' });
+
+      setToast({ 
+        message: `Deleted "${name}".`, 
+        type: 'info',
+        actionLabel: 'Undo',
+        onAction: async () => {
+          try {
+            await addDoc(collection(db, "items"), itemData);
+            setToast({ message: 'Item restored successfully!', type: 'success' });
+          } catch {
+            setToast({ message: 'Failed to restore item.', type: 'error' });
+          }
+        }
+      });
+
     } catch (error) {
       console.error("Error deleting item: ", error);
       setToast({ message: 'Failed to delete item.', type: 'error' });
@@ -165,7 +184,6 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
     }
   };
 
-  // BAGONG FILTERING LOGIC (Kasama ang Category)
   const filteredItems = items
     .filter(item => {
       const matchSearch = 
@@ -213,7 +231,6 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search className="h-4 w-4 text-gray-400" /></div>
           <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-800 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" placeholder="Search items or specs..." />
         </div>
-        {/* BAGONG onChange PARA SA DROPDOWN */}
         <select 
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value)}
@@ -335,6 +352,8 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
           message={toast.message} 
           type={toast.type} 
           onClose={() => setToast(null)} 
+          actionLabel={toast.actionLabel}
+          onAction={toast.onAction}
         />
       )}
     </div>
