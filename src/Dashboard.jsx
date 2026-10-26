@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   LayoutDashboard, Package, ArrowRightLeft, FolderKanban, 
-  Truck, FileText, Users, LogOut, ArrowDownLeft, ArrowUpRight 
+  Truck, FileText, Users, LogOut, ArrowDownLeft, ArrowUpRight, Activity, ChevronDown, Menu, X, Loader2
 } from 'lucide-react';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { collection, onSnapshot } from "firebase/firestore";
@@ -13,6 +13,10 @@ import Projects from './Projects';
 import Suppliers from './Suppliers'; 
 import Reports from './Reports'; 
 import UsersPage from './Users'; 
+import NotificationBell from './NotificationBell'; 
+import ThemeToggle from './ThemeToggle';
+import ActivityLogs from './ActivityLogs'; 
+import UserProfileModal from './UserProfileModal'; 
 
 export default function Dashboard({ onLogout, userEmail }) {
   const [activeMenu, setActiveMenu] = useState('Dashboard');
@@ -21,10 +25,18 @@ export default function Dashboard({ onLogout, userEmail }) {
   const [projects, setProjects] = useState([]);
   const [movements, setMovements] = useState([]);
   const [users, setUsers] = useState([]); 
+  const [logs, setLogs] = useState([]); 
+
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
+  
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const unsubItems = onSnapshot(collection(db, "items"), (snapshot) => {
       setItems(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+      setIsLoading(false);
     });
 
     const unsubProjects = onSnapshot(collection(db, "projects"), (snapshot) => {
@@ -32,18 +44,29 @@ export default function Dashboard({ onLogout, userEmail }) {
     });
 
     const unsubMovements = onSnapshot(collection(db, "movements"), (snapshot) => {
-      setMovements(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+      const sortedMovements = snapshot.docs
+        .map(doc => ({ ...doc.data(), id: doc.id }))
+        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); 
+      setMovements(sortedMovements);
     });
 
     const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
       setUsers(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
     });
 
+    const unsubLogs = onSnapshot(collection(db, "logs"), (snapshot) => {
+      const sortedLogs = snapshot.docs
+        .map(doc => ({ ...doc.data(), id: doc.id }))
+        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      setLogs(sortedLogs);
+    });
+
     return () => {
       unsubItems();
       unsubProjects();
       unsubMovements();
-      unsubUsers();
+      unsubUsers(); 
+      unsubLogs(); 
     };
   }, []);
 
@@ -51,9 +74,25 @@ export default function Dashboard({ onLogout, userEmail }) {
   const displayName = currentUser ? currentUser.name.split(' ')[0] : 'User';
   const userRole = currentUser ? currentUser.role : 'staff';
 
+  const menuItems = [
+    { name: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'staff'] },
+    { name: 'Items', icon: Package, roles: ['admin', 'staff'] },
+    { name: 'Stock Movements', icon: ArrowRightLeft, roles: ['admin', 'staff'] },
+    { name: 'Projects', icon: FolderKanban, roles: ['admin', 'staff'] },
+    { name: 'Suppliers', icon: Truck, roles: ['admin'] }, 
+    { name: 'Reports', icon: FileText, roles: ['admin'] }, 
+    { name: 'Users', icon: Users, roles: ['admin'] }, 
+    { name: 'Activity Logs', icon: Activity, roles: ['admin'] }, 
+  ];
+
+  const filteredMenu = menuItems.filter(item => item.roles.includes(userRole));
+
   const totalItems = items.length;
   const totalStockValue = items.reduce((total, item) => total + (item.qty * item.price), 0);
-  const lowStockCount = items.filter(item => item.qty <= item.min).length;
+  
+  const lowStockItems = items.filter(item => item.qty <= item.min);
+  const lowStockCount = lowStockItems.length;
+  
   const activeProjects = projects.filter(p => p.status === 'Active');
   const activeProjectsCount = activeProjects.length;
 
@@ -85,9 +124,39 @@ export default function Dashboard({ onLogout, userEmail }) {
     ];
   }, [movements]);
 
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 text-green-800 dark:text-green-400 animate-spin" />
+          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Loading inventory data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-screen w-full font-sans bg-gray-50">
-      <div className="w-64 bg-[#0e2a21] text-white flex flex-col justify-between">
+    <div className="flex h-screen w-full font-sans bg-gray-50 dark:bg-gray-900 transition-colors relative">
+      
+      {isMobileMenuOpen && (
+        <div 
+          onClick={() => setIsMobileMenuOpen(false)} 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+        ></div>
+      )}
+
+      {/* SIDEBAR - Responsive */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0e2a21] text-white flex flex-col justify-between border-r border-[#184536] transform transition-transform duration-300 ease-in-out ${
+        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      } md:relative md:translate-x-0`}>
+        
+        <button 
+          onClick={() => setIsMobileMenuOpen(false)} 
+          className="absolute top-4 right-4 md:hidden p-1.5 hover:bg-white/10 rounded-full"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
         <div>
           <div className="p-6 flex items-center gap-3">
             <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-[#0e2a21] text-xs">LRT</div>
@@ -97,15 +166,10 @@ export default function Dashboard({ onLogout, userEmail }) {
             </div>
           </div>
           <nav className="mt-4 px-4 space-y-1">
-            {[
-              { name: 'Dashboard', icon: LayoutDashboard }, { name: 'Items', icon: Package },
-              { name: 'Stock Movements', icon: ArrowRightLeft }, { name: 'Projects', icon: FolderKanban },
-              { name: 'Suppliers', icon: Truck }, { name: 'Reports', icon: FileText },
-              { name: 'Users', icon: Users },
-            ].map((item) => (
+            {filteredMenu.map((item) => (
               <button
                 key={item.name}
-                onClick={() => setActiveMenu(item.name)}
+                onClick={() => { setActiveMenu(item.name); setIsMobileMenuOpen(false); }}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors ${
                   activeMenu === item.name ? 'bg-[#1b4d3e] text-white' : 'text-gray-400 hover:text-white hover:bg-[#184536]'
                 }`}
@@ -123,61 +187,116 @@ export default function Dashboard({ onLogout, userEmail }) {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-y-auto">
-        <header className="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center">
-          <div>
-            <p className="text-xs text-gray-500 font-semibold tracking-wider uppercase">Inventory Console</p>
-            <h1 className="text-xl font-bold text-gray-800">
-              Welcome back, {displayName} <span className="text-sm font-normal text-gray-500">({userRole})</span>
-            </h1>
+      {/* MAIN CONTENT */}
+      <div className="flex-1 flex flex-col overflow-y-auto w-full">
+        {/* STICKY HEADER */}
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 md:px-8 py-4 flex justify-between items-center transition-colors sticky top-0 z-30">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)} 
+              className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold tracking-wider uppercase">Inventory Console</p>
+              <h1 className="text-sm md:text-xl font-bold text-gray-800 dark:text-white truncate max-w-[150px] sm:max-w-none">
+                Welcome back, {displayName} <span className="text-xs md:text-sm font-normal text-gray-500 dark:text-gray-400">({userRole})</span>
+              </h1>
+            </div>
           </div>
-          <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Cloud Live
+          
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="relative">
+              <button 
+                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                className="flex items-center gap-2 p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full bg-[#0e2a21] flex items-center justify-center text-white font-bold text-xs">
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 hidden md:block">{displayName}</span>
+                <ChevronDown className="w-4 h-4 text-gray-400 hidden md:block" />
+              </button>
+
+              {isProfileDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+                  <div className="p-3 border-b border-gray-100 dark:border-gray-700">
+                    <p className="text-sm font-bold text-gray-800 dark:text-white">{currentUser?.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{currentUser?.email}</p>
+                  </div>
+                  <button 
+                    onClick={() => { setIsProfileModalOpen(true); setIsProfileDropdownOpen(false); }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    Profile Settings
+                  </button>
+                  <button 
+                    onClick={onLogout}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <ThemeToggle />
+            <NotificationBell 
+              lowStockItems={lowStockItems} 
+              onViewItems={() => setActiveMenu('Items')} 
+            />
+            <div className="hidden sm:flex items-center gap-2 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full text-xs font-semibold">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Cloud Live
+            </div>
           </div>
         </header>
 
-        <main className="p-8">
+        <main className="p-4 md:p-8">
           {activeMenu === 'Dashboard' && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-start">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <div onClick={() => setActiveMenu('Items')} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex justify-between items-start cursor-pointer hover:shadow-md hover:border-green-500 transition-all">
                   <div>
-                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Total Items</p>
-                    <h2 className="text-2xl font-bold text-gray-900 mt-1">{totalItems}</h2>
-                    <p className="text-xs text-gray-400 mt-1">SKUs tracked</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Items</p>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{totalItems}</h2>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">SKUs tracked</p>
                   </div>
                   <div className="p-2 bg-[#0e2a21] rounded-lg"><Package className="w-5 h-5 text-white" /></div>
                 </div>
-                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-start">
+                
+                <div onClick={() => setActiveMenu('Reports')} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex justify-between items-start cursor-pointer hover:shadow-md hover:border-green-500 transition-all">
                   <div>
-                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Stock Value</p>
-                    <h2 className="text-2xl font-bold text-gray-900 mt-1">₱{totalStockValue.toLocaleString()}</h2>
-                    <p className="text-xs text-gray-400 mt-1">Current inventory worth</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Stock Value</p>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">₱{totalStockValue.toLocaleString()}</h2>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Current inventory worth</p>
                   </div>
-                  <div className="p-2 bg-green-100 rounded-lg"><ArrowUpRight className="w-5 h-5 text-green-600" /></div>
+                  <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg"><ArrowUpRight className="w-5 h-5 text-green-600 dark:text-green-400" /></div>
                 </div>
-                <div onClick={() => setActiveMenu('Items')} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-start cursor-pointer hover:border-yellow-400 transition-colors">
+                
+                <div onClick={() => setActiveMenu('Items')} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex justify-between items-start cursor-pointer hover:shadow-md hover:border-yellow-500 transition-all">
                   <div>
-                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Low Stock</p>
-                    <h2 className="text-2xl font-bold text-gray-900 mt-1">{lowStockCount}</h2>
-                    <p className="text-xs text-gray-400 mt-1">Click to view items</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Low Stock</p>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{lowStockCount}</h2>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Click to view items</p>
                   </div>
-                  <div className="p-2 bg-yellow-100 rounded-lg"><ArrowDownLeft className="w-5 h-5 text-yellow-600" /></div>
+                  <div className="p-2 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg"><ArrowDownLeft className="w-5 h-5 text-yellow-600 dark:text-yellow-400" /></div>
                 </div>
-                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-start">
+                
+                <div onClick={() => setActiveMenu('Projects')} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex justify-between items-start cursor-pointer hover:shadow-md hover:border-red-500 transition-all">
                   <div>
-                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Active Projects</p>
-                    <h2 className="text-2xl font-bold text-gray-900 mt-1">{activeProjectsCount}</h2>
-                    <p className="text-xs text-gray-500 mt-1 truncate max-w-[150px]">{activeProjects.map(p => p.name).join(', ') || 'None'}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Active Projects</p>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{activeProjectsCount}</h2>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate max-w-[150px]">{activeProjects.map(p => p.name).join(', ') || 'None'}</p>
                   </div>
-                  <div className="p-2 bg-red-100 rounded-lg"><FolderKanban className="w-5 h-5 text-red-600" /></div>
+                  <div className="p-2 bg-red-100 dark:bg-red-900/50 rounded-lg"><FolderKanban className="w-5 h-5 text-red-600 dark:text-red-400" /></div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-2">
-                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">{currentDate} OVERVIEW</p>
-                  <h3 className="font-bold text-gray-800 mb-6">Stock In vs Out Trend</h3>
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm lg:col-span-2 transition-colors">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-1">{currentDate} OVERVIEW</p>
+                  <h3 className="font-bold text-gray-800 dark:text-white mb-6">Stock In vs Out Trend</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={lineData}>
@@ -191,9 +310,9 @@ export default function Dashboard({ onLogout, userEmail }) {
                   </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Portfolio</p>
-                  <h3 className="font-bold text-gray-800 mb-6">Items by Category</h3>
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-1">Portfolio</p>
+                  <h3 className="font-bold text-gray-800 dark:text-white mb-6">Items by Category</h3>
                   <div className="h-48 mb-4">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -208,33 +327,37 @@ export default function Dashboard({ onLogout, userEmail }) {
                       <div key={index} className="flex justify-between items-center text-xs">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
-                          <span className="text-gray-600 truncate max-w-[150px]">{item.name}</span>
+                          <span className="text-gray-600 dark:text-gray-300 truncate max-w-[150px]">{item.name}</span>
                         </div>
-                        <span className="font-bold text-gray-800">{item.value}</span>
+                        <span className="font-bold text-gray-800 dark:text-white">{item.value}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 transition-colors">
                 <div className="flex justify-between items-center mb-4">
                   <div>
-                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Activity</p>
-                    <h3 className="font-bold text-gray-800">Recent Movements</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-1">Activity</p>
+                    <h3 className="font-bold text-gray-800 dark:text-white">Recent Movements</h3>
                   </div>
-                  <button onClick={() => setActiveMenu('Stock Movements')} className="text-xs font-semibold text-green-700 hover:underline">View all</button>
+                  <button onClick={() => setActiveMenu('Stock Movements')} className="text-xs font-semibold text-green-700 dark:text-green-400 hover:underline">View all</button>
                 </div>
                 <div className="space-y-3">
                   {movements.slice(0, 3).map((move) => (
-                    <div key={move.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                    <div 
+                      key={move.id} 
+                      onClick={() => setActiveMenu('Stock Movements')}
+                      className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700 last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors px-2 rounded"
+                    >
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${move.type === 'IN' ? 'bg-green-100' : 'bg-red-100'}`}>
-                          {move.type === 'IN' ? <ArrowDownLeft className="w-4 h-4 text-green-600" /> : <ArrowUpRight className="w-4 h-4 text-red-600" />}
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${move.type === 'IN' ? 'bg-green-100 dark:bg-green-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
+                          {move.type === 'IN' ? <ArrowDownLeft className="w-4 h-4 text-green-600 dark:text-green-400" /> : <ArrowUpRight className="w-4 h-4 text-red-600 dark:text-red-400" />}
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-gray-800">{move.item}</p>
-                          <p className="text-xs text-gray-500">{move.user} · {move.date.split(',')[0]}</p>
+                          <p className="text-sm font-semibold text-gray-800 dark:text-white">{move.item}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{move.user} · {move.date.split(',')[0]}</p>
                         </div>
                       </div>
                       <span className={`text-sm font-bold ${move.type === 'IN' ? 'text-green-600' : 'text-red-600'}`}>
@@ -252,16 +375,34 @@ export default function Dashboard({ onLogout, userEmail }) {
             <Items 
               items={items} 
               defaultFilterLowStock={lowStockCount > 0} 
-              currentUserName={displayName} // IPINAPASA NATIN ANG PANGALAN DITO
+              currentUserName={displayName} 
+              userRole={userRole} 
+              projects={projects} 
             />
           )}
-          {activeMenu === 'Stock Movements' && <StockMovements movements={movements} />}
-          {activeMenu === 'Projects' && <Projects projects={projects} />}
-          {activeMenu === 'Suppliers' && <Suppliers />}
-          {activeMenu === 'Reports' && <Reports items={items} />}
+          
+          {activeMenu === 'Stock Movements' && (
+            <StockMovements 
+              movements={movements} 
+              items={items} 
+              projects={projects} 
+              userRole={userRole} 
+            />
+          )}
+          
+          {activeMenu === 'Projects' && <Projects projects={projects} userRole={userRole} />}
+          {activeMenu === 'Suppliers' && <Suppliers userRole={userRole} />}
+          {activeMenu === 'Reports' && <Reports items={items} movements={movements} />}
           {activeMenu === 'Users' && <UsersPage />}
+          {activeMenu === 'Activity Logs' && <ActivityLogs logs={logs} />}
         </main>
       </div>
+
+      <UserProfileModal 
+        isOpen={isProfileModalOpen} 
+        onClose={() => setIsProfileModalOpen(false)} 
+        currentUser={currentUser} 
+      />
     </div>
   );
 }

@@ -4,12 +4,11 @@ import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "fireb
 import { db } from './firebase';
 import SupplierModal from './SupplierModal';
 
-export default function Suppliers() {
+export default function Suppliers({ userRole }) {
   const [suppliers, setSuppliers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
 
-  // Kunin ang data mula sa Firebase
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "suppliers"), (snapshot) => {
       setSuppliers(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
@@ -67,12 +66,17 @@ export default function Suppliers() {
                 <p className="text-xs text-gray-500 uppercase tracking-wider mt-0.5">{supplier.contact}</p>
               </div>
               <div className="flex gap-1">
-                <button onClick={() => openEditModal(supplier)} className="p-1.5 text-gray-400 hover:text-blue-600 rounded">
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button onClick={() => handleDelete(supplier.id, supplier.name)} className="p-1.5 text-gray-400 hover:text-red-600 rounded">
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {/* EDIT AT DELETE - PWEDE LANG SA ADMIN */}
+                {userRole === 'admin' && (
+                  <>
+                    <button onClick={() => openEditModal(supplier)} className="p-1.5 text-gray-400 hover:text-blue-600 rounded">
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleDelete(supplier.id, supplier.name)} className="p-1.5 text-gray-400 hover:text-red-600 rounded">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
             <div className="space-y-2 mt-auto">

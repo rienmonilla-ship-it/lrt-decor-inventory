@@ -1,10 +1,9 @@
 import { Download } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
-// Tinatanggap natin ang "items" prop
-export default function Reports({ items }) {
+export default function Reports({ items, movements }) {
   
-  // Kinukuha natin ang totoong category data galing sa items
+  // Dynamic Category Data
   const categoryData = items.reduce((acc, item) => {
     const existing = acc.find(a => a.name === item.category);
     if (existing) {
@@ -15,11 +14,15 @@ export default function Reports({ items }) {
     return acc;
   }, []);
 
-  // Kinukuha natin ang Top 10 items base sa value
+  // Dynamic Top Items
   const topItemsData = [...items]
     .sort((a, b) => (b.qty * b.price) - (a.qty * a.price))
     .slice(0, 10)
     .map((item, index) => ({ name: `${index + 1}. ${item.name}`, value: (item.qty * item.price) }));
+
+  // Bilang ng IN at OUT transactions
+  const stockInCount = movements?.filter(m => m.type === 'IN').length || 0;
+  const stockOutCount = movements?.filter(m => m.type === 'OUT').length || 0;
 
   const handleExportCSV = () => {
     let csvContent = "Category,Value (PHP)\n";
@@ -64,12 +67,12 @@ export default function Reports({ items }) {
           <h2 className="text-2xl font-bold text-gray-900 mt-1">₱{items.reduce((total, item) => total + (item.qty * item.price), 0).toLocaleString()}</h2>
         </div>
         <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Stock In Transactions</p>
-          <h2 className="text-2xl font-bold text-gray-900 mt-1">--</h2>
+          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Stock IN Transactions</p>
+          <h2 className="text-2xl font-bold text-gray-900 mt-1">{stockInCount}</h2>
         </div>
         <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Stock Out Transactions</p>
-          <h2 className="text-2xl font-bold text-gray-900 mt-1">--</h2>
+          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Stock OUT Transactions</p>
+          <h2 className="text-2xl font-bold text-gray-900 mt-1">{stockOutCount}</h2>
         </div>
       </div>
 

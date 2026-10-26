@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
-import { signInWithEmailAndPassword } from "firebase/auth"; // Tinanggal ang onAuthStateChanged
+import { signInWithEmailAndPassword } from "firebase/auth"; 
 import { auth } from './firebase'; 
 import Dashboard from './Dashboard';
+import ForgotPasswordModal from './ForgotPasswordModal'; 
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userEmail, setUserEmail] = useState(''); // I-save natin ang email dito
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [userEmail, setUserEmail] = useState(''); 
+  const [email, setEmail] = useState(''); // BLANGKO SA SIMULA
+  const [password, setPassword] = useState(''); // BLANGKO SA SIMULA
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false); 
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -19,7 +21,7 @@ function App() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password.trim());
-      setUserEmail(userCredential.user.email); // Kunin ang email ng naka-login
+      setUserEmail(userCredential.user.email); 
       setIsLoggedIn(true);
     } catch (err) {
       console.error(err);
@@ -34,7 +36,7 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen w-full font-sans">
+    <div className="flex h-screen w-full font-sans bg-gray-50 dark:bg-gray-900 transition-colors">
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 bg-[#0e2a21] text-white">
         <div>
           <div className="flex items-center gap-3 mb-16">
@@ -57,39 +59,69 @@ function App() {
         </div>
       </div>
 
-      <div className="flex flex-col justify-center items-center w-full lg:w-1/2 bg-gray-50 p-8">
+      <div className="flex flex-col justify-center items-center w-full lg:w-1/2 bg-gray-50 dark:bg-gray-800 p-8 transition-colors">
         <div className="w-full max-w-md">
-          <p className="text-green-800 tracking-widest text-xs font-semibold uppercase mb-2">Sign In</p>
-          <h2 className="text-4xl font-bold text-gray-900 mb-2">Welcome back.</h2>
-          <p className="text-gray-500 mb-8 text-sm">Enter your credentials to access your inventory workspace.</p>
+          <p className="text-green-800 dark:text-green-400 tracking-widest text-xs font-semibold uppercase mb-2">Sign In</p>
+          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Welcome back.</h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-8 text-sm">Enter your credentials to access your inventory workspace.</p>
           
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg flex items-center gap-2">
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-center gap-2">
               <AlertCircle className="w-4 h-4" /> {error}
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Email Address</label>
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wide">Email Address</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Mail className="h-5 w-5 text-gray-400" /></div>
-                <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-800 bg-white text-gray-900 sm:text-sm" placeholder="admin@lrtdecor.ph" />
+                <input 
+                  type="email" 
+                  required 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-800 bg-white dark:bg-gray-700 text-gray-900 dark:text-white sm:text-sm" 
+                  placeholder="you@lrtdecor.ph" 
+                  autoComplete="off" // PARA HINDI MAG-AUTOFILL
+                />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Password</label>
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wide">Password</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Lock className="h-5 w-5 text-gray-400" /></div>
-                <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-800 bg-white text-gray-900 sm:text-sm" placeholder="••••••••" />
+                <input 
+                  type="password" 
+                  required 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-800 bg-white dark:bg-gray-700 text-gray-900 dark:text-white sm:text-sm" 
+                  placeholder="••••••••" 
+                  autoComplete="new-password" // PARA HINDI MAG-AUTOFILL
+                />
               </div>
             </div>
             <button type="submit" disabled={loading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#0e2a21] hover:bg-[#184536] transition-colors disabled:opacity-50">
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
+          
+          <div className="mt-4 text-center">
+            <button 
+              onClick={() => setIsForgotModalOpen(true)}
+              className="text-xs text-green-700 dark:text-green-400 font-semibold hover:underline"
+            >
+              Forgot Password?
+            </button>
+          </div>
         </div>
       </div>
+
+      <ForgotPasswordModal 
+        isOpen={isForgotModalOpen} 
+        onClose={() => setIsForgotModalOpen(false)} 
+      />
     </div>
   );
 }

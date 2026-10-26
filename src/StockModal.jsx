@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { X, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 
-export default function StockModal({ isOpen, onClose, onConfirm, item, type }) {
+export default function StockModal({ isOpen, onClose, onConfirm, item, type, projects }) {
   const [qty, setQty] = useState(1);
   const [reason, setReason] = useState('');
+  const [selectedProject, setSelectedProject] = useState('');
 
   if (!isOpen || !item) return null;
 
@@ -12,9 +13,15 @@ export default function StockModal({ isOpen, onClose, onConfirm, item, type }) {
     if (qty <= 0) return alert("Quantity must be greater than 0");
     if (type === 'OUT' && qty > item.qty) return alert("Not enough stock available!");
     
-    onConfirm(item, type, Number(qty), reason);
+    // Kapag OUT, kailangan may project na pipiliin
+    if (type === 'OUT' && !selectedProject) {
+      return alert("Please select a project for this stock out.");
+    }
+
+    onConfirm(item, type, Number(qty), reason, selectedProject);
     setQty(1);
     setReason('');
+    setSelectedProject('');
   };
 
   return (
@@ -46,6 +53,23 @@ export default function StockModal({ isOpen, onClose, onConfirm, item, type }) {
             />
           </div>
 
+          {/* PROJECT DROPDOWN - LALABAS LANG KAPAG STOCK OUT */}
+          {type === 'OUT' && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase">Assign to Project</label>
+              <select 
+                value={selectedProject} 
+                onChange={(e) => setSelectedProject(e.target.value)} 
+                className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-green-800 outline-none bg-white"
+              >
+                <option value="">-- Select Project --</option>
+                {projects?.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase">Reason / Note (Optional)</label>
             <input 
@@ -53,7 +77,7 @@ export default function StockModal({ isOpen, onClose, onConfirm, item, type }) {
               value={reason} 
               onChange={(e) => setReason(e.target.value)} 
               className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-green-800 outline-none" 
-              placeholder={type === 'IN' ? "e.g. New delivery from supplier" : "e.g. Used for Jollibee Project"}
+              placeholder={type === 'IN' ? "e.g. New delivery" : "e.g. Installation"}
             />
           </div>
 

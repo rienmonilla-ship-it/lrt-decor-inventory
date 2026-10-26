@@ -4,7 +4,7 @@ import { collection, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestor
 import { db } from './firebase';
 import ProjectModal from './ProjectModal';
 
-export default function Projects({ projects }) {
+export default function Projects({ projects, userRole }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
 
@@ -61,12 +61,17 @@ export default function Projects({ projects }) {
                   {project.status}
                 </span>
                 <div className="flex gap-1">
-                  <button onClick={() => openEditModal(project)} className="p-1.5 text-gray-400 hover:text-blue-600 rounded">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => handleDelete(project.id, project.name)} className="p-1.5 text-gray-400 hover:text-red-600 rounded">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {/* EDIT AT DELETE - PWEDE LANG SA ADMIN */}
+                  {userRole === 'admin' && (
+                    <>
+                      <button onClick={() => openEditModal(project)} className="p-1.5 text-gray-400 hover:text-blue-600 rounded">
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => handleDelete(project.id, project.name)} className="p-1.5 text-gray-400 hover:text-red-600 rounded">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               <h3 className="font-bold text-lg text-gray-900">{project.name}</h3>
