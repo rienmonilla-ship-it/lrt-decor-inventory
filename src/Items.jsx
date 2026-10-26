@@ -149,14 +149,10 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
     setIsQRModalOpen(true);
   };
 
-  // AYOS NA LOGIC PARA SA SCANNER
   const handleScanSuccess = (scannedId) => {
     const item = items.find(i => i.id === scannedId);
     if (item) {
-      // 1. Isara muna ang scanner
-      setIsScannerOpen(false); 
-      
-      // 2. Mag-antay ng 100ms bago buksan ang Stock Modal para smooth ang transition
+      setIsScannerOpen(false);
       setTimeout(() => {
         openStockModal(item, 'IN');
       }, 100);
@@ -217,16 +213,22 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
       </div>
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-x-auto transition-colors">
-        <table className="w-full text-left border-collapse min-w-[600px]">
+        {/* MIN-W AY BINABAWASAN PARA HINDI MASYADONG MALAPAD SA MOBILE */}
+        <table className="w-full text-left border-collapse min-w-[400px] md:min-w-[800px]">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <th className="p-4 font-semibold">Item</th>
-              <th className="p-4 font-semibold">Category</th>
-              <th className="p-4 font-semibold">Spec</th>
+              
+              {/* HIDDEN SA MOBILE, VISIBLE SA DESKTOP */}
+              <th className="p-4 font-semibold hidden md:table-cell">Category</th>
+              <th className="p-4 font-semibold hidden lg:table-cell">Spec</th>
+              
               <th className="p-4 font-semibold text-right">Stock</th>
-              <th className="p-4 font-semibold text-right">Min</th>
-              <th className="p-4 font-semibold text-right">Unit Price</th>
-              <th className="p-4 font-semibold text-right">Value</th>
+              
+              <th className="p-4 font-semibold text-right hidden md:table-cell">Min</th>
+              <th className="p-4 font-semibold text-right hidden lg:table-cell">Unit Price</th>
+              <th className="p-4 font-semibold text-right hidden md:table-cell">Value</th>
+              
               {/* STICKY ACTIONS COLUMN HEADER */}
               <th className="p-4 font-semibold text-center sticky right-0 bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.1)]">Actions</th>
             </tr>
@@ -239,12 +241,21 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
                     <p className="font-semibold text-gray-800 dark:text-white text-sm">{item.name}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</p>
                   </td>
-                  <td className="p-4"><span className="inline-block px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-md border border-gray-200 dark:border-gray-600">{item.category}</span></td>
-                  <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{item.spec}</td>
+                  
+                  {/* HIDDEN SA MOBILE */}
+                  <td className="p-4 hidden md:table-cell">
+                    <span className="inline-block px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-md border border-gray-200 dark:border-gray-600 whitespace-nowrap">
+                      {item.category}
+                    </span>
+                  </td>
+                  <td className="p-4 text-sm text-gray-600 dark:text-gray-400 hidden lg:table-cell">{item.spec}</td>
+                  
                   <td className="p-4 text-right text-sm font-bold text-gray-800 dark:text-white">{item.qty}</td>
-                  <td className="p-4 text-right text-sm text-gray-500 dark:text-gray-400">{item.min}</td>
-                  <td className="p-4 text-right text-sm text-gray-800 dark:text-white">₱{item.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                  <td className="p-4 text-right text-sm font-bold text-gray-800 dark:text-white">₱{(item.qty * item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                  
+                  {/* HIDDEN SA MOBILE */}
+                  <td className="p-4 text-right text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">{item.min}</td>
+                  <td className="p-4 text-right text-sm text-gray-800 dark:text-white hidden lg:table-cell">₱{item.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                  <td className="p-4 text-right text-sm font-bold text-gray-800 dark:text-white hidden md:table-cell">₱{(item.qty * item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                   
                   {/* STICKY ACTIONS COLUMN DATA */}
                   <td className="p-4 text-center sticky right-0 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.1)]">
