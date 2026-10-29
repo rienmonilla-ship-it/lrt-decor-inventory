@@ -1,19 +1,23 @@
 import { useState } from 'react';
-import { Plus, Edit, Trash2 } from 'lucide-react'; 
+import { Plus, Edit, Trash2, Eye } from 'lucide-react'; // Idinagdag ang Eye icon
 import { collection, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
 import { db } from './firebase';
 import ProjectModal from './ProjectModal';
 import ConfirmModal from './ConfirmModal';
 import Toast from './Toast';
+import ProjectMaterialsModal from './ProjectMaterialsModal'; // BAGONG IMPORT
 
-export default function Projects({ projects, userRole }) {
+export default function Projects({ projects, movements, items, userRole }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [toast, setToast] = useState(null);
   
-  // States para sa Confirm Modal
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState(null);
+
+  // BAGONG STATE PARA SA MATERIALS MODAL
+  const [isMaterialsOpen, setIsMaterialsOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
 
   const handleSaveProject = async (formData) => {
     try {
@@ -52,6 +56,12 @@ export default function Projects({ projects, userRole }) {
   const openEditModal = (project) => { setEditingProject(project); setIsModalOpen(true); };
   const closeModal = () => { setIsModalOpen(false); setEditingProject(null); };
 
+  // BAGONG FUNCTION PARA BUKSAN ANG MATERIALS MODAL
+  const openMaterialsModal = (project) => {
+    setSelectedProject(project);
+    setIsMaterialsOpen(true);
+  };
+
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex justify-between items-end">
@@ -76,6 +86,11 @@ export default function Projects({ projects, userRole }) {
                   {project.status}
                 </span>
                 <div className="flex gap-1">
+                  {/* BAGONG VIEW MATERIALS BUTTON */}
+                  <button onClick={() => openMaterialsModal(project)} title="View Materials" className="p-1.5 text-gray-400 hover:text-green-600 rounded">
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  
                   {userRole === 'admin' && (
                     <>
                       <button onClick={() => openEditModal(project)} className="p-1.5 text-gray-400 hover:text-blue-600 rounded">
@@ -124,6 +139,15 @@ export default function Projects({ projects, userRole }) {
         title="Delete Project"
         message={`Are you sure you want to delete "${projectToDelete?.name}"? This action cannot be undone.`}
         confirmText="Delete Project"
+      />
+
+      {/* BAGONG MATERIALS MODAL */}
+      <ProjectMaterialsModal 
+        isOpen={isMaterialsOpen}
+        onClose={() => setIsMaterialsOpen(false)}
+        project={selectedProject}
+        movements={movements}
+        items={items}
       />
 
       {toast && (

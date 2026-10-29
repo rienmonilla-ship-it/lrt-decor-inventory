@@ -189,7 +189,6 @@ export default function Dashboard({ onLogout, userEmail }) {
 
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col overflow-y-auto w-full">
-        {/* STICKY HEADER */}
         <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 md:px-8 py-4 flex justify-between items-center transition-colors sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <button 
@@ -390,7 +389,16 @@ export default function Dashboard({ onLogout, userEmail }) {
             />
           )}
           
-          {activeMenu === 'Projects' && <Projects projects={projects} userRole={userRole} />}
+          {/* BAGONG UPDATE: IPINAPASA ANG movements AT items SA PROJECTS */}
+          {activeMenu === 'Projects' && (
+            <Projects 
+              projects={projects} 
+              movements={movements} 
+              items={items} 
+              userRole={userRole} 
+            />
+          )}
+          
           {activeMenu === 'Suppliers' && <Suppliers userRole={userRole} />}
           {activeMenu === 'Reports' && <Reports items={items} movements={movements} />}
           {activeMenu === 'Users' && <UsersPage />}
