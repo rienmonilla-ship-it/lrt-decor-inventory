@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   LayoutDashboard, Package, ArrowRightLeft, FolderKanban, 
-  Truck, FileText, Users, LogOut, ArrowDownLeft, ArrowUpRight, Activity, ChevronDown, Menu, X, Loader2
+  Truck, FileText, Users, LogOut, ArrowDownLeft, ArrowUpRight, Activity, ChevronDown, Menu, X, Loader2, TrendingUp
 } from 'lucide-react';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { collection, onSnapshot } from "firebase/firestore";
@@ -89,6 +89,9 @@ export default function Dashboard({ onLogout, userEmail }) {
 
   const totalItems = items.length;
   const totalStockValue = items.reduce((total, item) => total + (item.qty * item.price), 0);
+  
+  // COMPUTE TOTAL INCOME
+  const totalIncome = projects.reduce((sum, p) => sum + (p.contractPrice || 0), 0);
   
   const lowStockItems = items.filter(item => item.qty <= item.min);
   const lowStockCount = lowStockItems.length;
@@ -254,7 +257,8 @@ export default function Dashboard({ onLogout, userEmail }) {
         <main className="p-4 md:p-8">
           {activeMenu === 'Dashboard' && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {/* BAGONG GRID NA MAY 5 CARDS */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
                 <div onClick={() => setActiveMenu('Items')} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex justify-between items-start cursor-pointer hover:shadow-md hover:border-green-500 transition-all">
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Items</p>
@@ -271,6 +275,16 @@ export default function Dashboard({ onLogout, userEmail }) {
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Current inventory worth</p>
                   </div>
                   <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg"><ArrowUpRight className="w-5 h-5 text-green-600 dark:text-green-400" /></div>
+                </div>
+
+                {/* BAGONG TOTAL INCOME CARD */}
+                <div onClick={() => setActiveMenu('Reports')} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex justify-between items-start cursor-pointer hover:shadow-md hover:border-green-500 transition-all">
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Income</p>
+                    <h2 className="text-2xl font-bold text-green-600 mt-1">₱{totalIncome.toLocaleString()}</h2>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">From all projects</p>
+                  </div>
+                  <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg"><TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" /></div>
                 </div>
                 
                 <div onClick={() => setActiveMenu('Items')} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex justify-between items-start cursor-pointer hover:shadow-md hover:border-yellow-500 transition-all">
@@ -389,7 +403,6 @@ export default function Dashboard({ onLogout, userEmail }) {
             />
           )}
           
-          {/* BAGONG UPDATE: IPINAPASA ANG movements AT items SA PROJECTS */}
           {activeMenu === 'Projects' && (
             <Projects 
               projects={projects} 
@@ -400,7 +413,7 @@ export default function Dashboard({ onLogout, userEmail }) {
           )}
           
           {activeMenu === 'Suppliers' && <Suppliers userRole={userRole} />}
-          {activeMenu === 'Reports' && <Reports items={items} movements={movements} />}
+          {activeMenu === 'Reports' && <Reports items={items} movements={movements} projects={projects} />}
           {activeMenu === 'Users' && <UsersPage />}
           {activeMenu === 'Activity Logs' && <ActivityLogs logs={logs} />}
         </main>
