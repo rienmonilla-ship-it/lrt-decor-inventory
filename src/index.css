@@ -16,3 +16,52 @@
 .animate-slide-in {
   animation: slide-in 0.3s ease-out;
 }
+
+/* --- PRINT STYLES --- */
+@media print {
+  /* Itago ang lahat ng elements sa page */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Ipakita lang ang print area at ang mga anak nito */
+  #print-area, #print-area * {
+    visibility: visible;
+  }
+
+  /* I-position ang print area sa taas ng page */
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: white !important;
+    color: black !important;
+    padding: 20px;
+  }
+
+  /* Pilitin ang lahat ng text na maging itim */
+  #print-area h1, 
+  #print-area h2, 
+  #print-area p, 
+  #print-area span, 
+  #print-area td, 
+  #print-area th,
+  #print-area div {
+    color: black !important;
+    background: transparent !important;
+  }
+
+  /* Gawing itim ang border */
+  #print-area table, 
+  #print-area tr, 
+  #print-area td, 
+  #print-area th {
+    border-color: black !important;
+  }
+
+  /* Itago ang mga buttons sa print */
+  button {
+    display: none !important;
+  }
+}
