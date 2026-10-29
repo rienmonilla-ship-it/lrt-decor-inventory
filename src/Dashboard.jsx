@@ -90,7 +90,6 @@ export default function Dashboard({ onLogout, userEmail }) {
   const totalItems = items.length;
   const totalStockValue = items.reduce((total, item) => total + (item.qty * item.price), 0);
   
-  // COMPUTE TOTAL INCOME
   const totalIncome = projects.reduce((sum, p) => sum + (p.contractPrice || 0), 0);
   
   const lowStockItems = items.filter(item => item.qty <= item.min);
@@ -114,17 +113,33 @@ export default function Dashboard({ onLogout, userEmail }) {
     }));
   }, [items]);
 
+  // BAGONG LOGIC PARA SA TOTOONG PER-DAY CHART
   const lineData = useMemo(() => {
-    const totalIn = movements.filter(m => m.type === 'IN').reduce((sum, m) => sum + m.qty, 0);
-    const totalOut = movements.filter(m => m.type === 'OUT').reduce((sum, m) => sum + m.qty, 0);
-    
-    return [
-      { name: 'Day 1', in: 0, out: 0 },
-      { name: 'Day 2', in: 0, out: 0 },
-      { name: 'Day 3', in: totalIn > 0 ? totalIn * 0.2 : 0, out: 0 },
-      { name: 'Day 4', in: totalIn > 0 ? totalIn * 0.5 : 0, out: 0 },
-      { name: 'Today', in: totalIn, out: totalOut },
-    ];
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      last7Days.push({
+        label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        fullDate: date.toDateString(),
+        in: 0,
+        out: 0
+      });
+    }
+
+    movements.forEach(move => {
+      const moveDate = new Date(move.date).toDateString();
+      const dayData = last7Days.find(d => d.fullDate === moveDate);
+      if (dayData) {
+        if (move.type === 'IN') {
+          dayData.in += move.qty;
+        } else if (move.type === 'OUT') {
+          dayData.out += move.qty;
+        }
+      }
+    });
+
+    return last7Days.map(d => ({ name: d.label, in: d.in, out: d.out }));
   }, [movements]);
 
   if (isLoading) {
@@ -257,7 +272,6 @@ export default function Dashboard({ onLogout, userEmail }) {
         <main className="p-4 md:p-8">
           {activeMenu === 'Dashboard' && (
             <div className="space-y-6">
-              {/* BAGONG GRID NA MAY 5 CARDS */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
                 <div onClick={() => setActiveMenu('Items')} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex justify-between items-start cursor-pointer hover:shadow-md hover:border-green-500 transition-all">
                   <div>
@@ -277,7 +291,6 @@ export default function Dashboard({ onLogout, userEmail }) {
                   <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg"><ArrowUpRight className="w-5 h-5 text-green-600 dark:text-green-400" /></div>
                 </div>
 
-                {/* BAGONG TOTAL INCOME CARD */}
                 <div onClick={() => setActiveMenu('Reports')} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex justify-between items-start cursor-pointer hover:shadow-md hover:border-green-500 transition-all">
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Income</p>
