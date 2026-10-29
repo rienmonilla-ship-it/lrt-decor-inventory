@@ -9,6 +9,7 @@ import QRCodeModal from './QRCodeModal';
 import PrintSlipModal from './PrintSlipModal';
 import Toast from './Toast';
 import ConfirmModal from './ConfirmModal';
+import ScanActionModal from './ScanActionModal'; // BAGONG IMPORT
 
 export default function Items({ items, defaultFilterLowStock, currentUserName, userRole, projects }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,6 +26,10 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
   const [isQRModalOpen, setIsQRModalOpen] = useState(false); 
   const [qrItem, setQrItem] = useState(null); 
 
+  // BAGONG STATES PARA SA SCAN ACTION
+  const [isScanActionOpen, setIsScanActionOpen] = useState(false);
+  const [scannedItem, setScannedItem] = useState(null);
+
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
   const [slipData, setSlipData] = useState({ item: null, qty: 0, projectName: '' });
 
@@ -32,7 +37,7 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
   const [isSaving, setIsSaving] = useState(false);
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState(null); // TAMANG SPELLING
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const calculateTotalValue = () => {
     return items.reduce((total, item) => total + (item.qty * item.price), 0).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
@@ -172,16 +177,27 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
     setIsQRModalOpen(true);
   };
 
+  // BAGONG LOGIC PARA SA SCANNER (May choice kung IN o OUT)
   const handleScanSuccess = (scannedId) => {
     const item = items.find(i => i.id === scannedId);
     if (item) {
       setIsScannerOpen(false);
+      setScannedItem(item);
       setTimeout(() => {
-        openStockModal(item, 'IN');
+        setIsScanActionOpen(true);
       }, 100);
     } else {
       setToast({ message: 'Item not found! QR code may be invalid.', type: 'error' });
     }
+  };
+
+  const handleSelectScanAction = (actionType) => {
+    setIsScanActionOpen(false);
+    setTimeout(() => {
+      setStockItem(scannedItem);
+      setStockType(actionType);
+      setIsStockModalOpen(true);
+    }, 100);
   };
 
   const filteredItems = items
@@ -321,6 +337,14 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
         isOpen={isScannerOpen} 
         onClose={() => setIsScannerOpen(false)} 
         onScan={handleScanSuccess} 
+      />
+
+      {/* BAGONG DAGDAG NA SCAN ACTION MODAL */}
+      <ScanActionModal 
+        isOpen={isScanActionOpen}
+        onClose={() => setIsScanActionOpen(false)}
+        item={scannedItem}
+        onSelectAction={handleSelectScanAction}
       />
 
       <QRCodeModal 

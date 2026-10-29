@@ -83,7 +83,7 @@ function App() {
                   onChange={(e) => setEmail(e.target.value)} 
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-800 bg-white dark:bg-gray-700 text-gray-900 dark:text-white sm:text-sm" 
                   placeholder="you@lrtdecor.ph" 
-                  autoComplete="off" // PARA HINDI MAG-AUTOFILL
+                  autoComplete="off" 
                 />
               </div>
             </div>
@@ -98,7 +98,7 @@ function App() {
                   onChange={(e) => setPassword(e.target.value)} 
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-800 bg-white dark:bg-gray-700 text-gray-900 dark:text-white sm:text-sm" 
                   placeholder="••••••••" 
-                  autoComplete="new-password" // PARA HINDI MAG-AUTOFILL
+                  autoComplete="new-password" 
                 />
               </div>
             </div>
