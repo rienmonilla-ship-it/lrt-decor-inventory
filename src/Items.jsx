@@ -9,7 +9,7 @@ import QRCodeModal from './QRCodeModal';
 import PrintSlipModal from './PrintSlipModal';
 import Toast from './Toast';
 import ConfirmModal from './ConfirmModal';
-import ScanActionModal from './ScanActionModal'; // BAGONG IMPORT
+import ScanActionModal from './ScanActionModal';
 
 export default function Items({ items, defaultFilterLowStock, currentUserName, userRole, projects }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,7 +26,6 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
   const [isQRModalOpen, setIsQRModalOpen] = useState(false); 
   const [qrItem, setQrItem] = useState(null); 
 
-  // BAGONG STATES PARA SA SCAN ACTION
   const [isScanActionOpen, setIsScanActionOpen] = useState(false);
   const [scannedItem, setScannedItem] = useState(null);
 
@@ -177,7 +176,6 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
     setIsQRModalOpen(true);
   };
 
-  // BAGONG LOGIC PARA SA SCANNER (May choice kung IN o OUT)
   const handleScanSuccess = (scannedId) => {
     const item = items.find(i => i.id === scannedId);
     if (item) {
@@ -223,45 +221,50 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
 
   return (
     <div className="p-4 md:p-8 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
-        <div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold tracking-wider uppercase mb-1">Inventory</p>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Items</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {items.length} items · {calculateTotalValue()} value · {items.filter(i => i.qty <= i.min).length} low stock
-          </p>
-        </div>
+      {/* STICKY HEADER */}
+      <div className="sticky top-[72px] z-20 bg-gray-50 dark:bg-gray-900 pt-4 pb-4 -mx-4 px-4 md:-mx-8 md:px-8 border-b border-gray-200 dark:border-gray-700 transition-colors">
         
-        <div className="flex gap-3 w-full sm:w-auto">
-          <button onClick={() => setIsScannerOpen(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-            <ScanLine className="w-4 h-4" /> Scan
-          </button>
-          <button onClick={openAddModal} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[#0e2a21] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#184536] transition-colors">
-            <Plus className="w-4 h-4" /> New Item
-          </button>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-4">
+          <div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold tracking-wider uppercase mb-1">Inventory</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Items</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {items.length} items · {calculateTotalValue()} value · {items.filter(i => i.qty <= i.min).length} low stock
+            </p>
+          </div>
+          
+          <div className="flex gap-3 w-full sm:w-auto">
+            <button onClick={() => setIsScannerOpen(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              <ScanLine className="w-4 h-4" /> Scan
+            </button>
+            <button onClick={openAddModal} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[#0e2a21] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#184536] transition-colors">
+              <Plus className="w-4 h-4" /> New Item
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search className="h-4 w-4 text-gray-400" /></div>
+            <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-800 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" placeholder="Search items or specs..." />
+          </div>
+          <select 
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 w-full sm:w-auto"
+          >
+            <option>All categories</option>
+            <option>Structural & Track Systems</option>
+            <option>Mechanisms & Hardware</option>
+            <option>Fasteners & Fixings</option>
+            <option>Sealants, Insulation & Finishing</option>
+            <option>Tools & Consumables</option>
+            <option>Services & Installations</option>
+          </select>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search className="h-4 w-4 text-gray-400" /></div>
-          <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-800 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" placeholder="Search items or specs..." />
-        </div>
-        <select 
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
-          className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 w-full sm:w-auto"
-        >
-          <option>All categories</option>
-          <option>Structural & Track Systems</option>
-          <option>Mechanisms & Hardware</option>
-          <option>Fasteners & Fixings</option>
-          <option>Sealants, Insulation & Finishing</option>
-          <option>Tools & Consumables</option>
-          <option>Services & Installations</option>
-        </select>
-      </div>
-
+      {/* TABLE */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-x-auto transition-colors">
         <table className="w-full text-left border-collapse min-w-[400px] md:min-w-[800px]">
           <thead>
@@ -339,7 +342,6 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
         onScan={handleScanSuccess} 
       />
 
-      {/* BAGONG DAGDAG NA SCAN ACTION MODAL */}
       <ScanActionModal 
         isOpen={isScanActionOpen}
         onClose={() => setIsScanActionOpen(false)}
