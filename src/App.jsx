@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Mail, Lock, AlertCircle } from 'lucide-react';
-import { signInWithEmailAndPassword } from "firebase/auth"; 
+import { useState, useEffect } from 'react';
+import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
+import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth"; 
 import { auth } from './firebase'; 
 import Dashboard from './Dashboard';
 import ForgotPasswordModal from './ForgotPasswordModal'; 
@@ -8,11 +8,26 @@ import ForgotPasswordModal from './ForgotPasswordModal';
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState(''); 
-  const [email, setEmail] = useState(''); // BLANGKO SA SIMULA
-  const [password, setPassword] = useState(''); // BLANGKO SA SIMULA
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false); 
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUserEmail(user.email);
+        setIsLoggedIn(true);
+      } else {
+        setIsLoggedIn(false);
+      }
+      setIsCheckingAuth(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -30,6 +45,17 @@ function App() {
       setLoading(false);
     }
   };
+
+  if (isCheckingAuth) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 text-green-800 dark:text-green-400 animate-spin" />
+          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoggedIn) {
     return <Dashboard onLogout={() => setIsLoggedIn(false)} userEmail={userEmail} />;
@@ -76,30 +102,14 @@ function App() {
               <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wide">Email Address</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Mail className="h-5 w-5 text-gray-400" /></div>
-                <input 
-                  type="email" 
-                  required 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-800 bg-white dark:bg-gray-700 text-gray-900 dark:text-white sm:text-sm" 
-                  placeholder="you@lrtdecor.ph" 
-                  autoComplete="off" 
-                />
+                <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-800 bg-white dark:bg-gray-700 text-gray-900 dark:text-white sm:text-sm" placeholder="you@lrtdecor.ph" autoComplete="off" />
               </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wide">Password</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Lock className="h-5 w-5 text-gray-400" /></div>
-                <input 
-                  type="password" 
-                  required 
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-800 bg-white dark:bg-gray-700 text-gray-900 dark:text-white sm:text-sm" 
-                  placeholder="••••••••" 
-                  autoComplete="new-password" 
-                />
+                <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-800 bg-white dark:bg-gray-700 text-gray-900 dark:text-white sm:text-sm" placeholder="••••••••" autoComplete="new-password" />
               </div>
             </div>
             <button type="submit" disabled={loading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#0e2a21] hover:bg-[#184536] transition-colors disabled:opacity-50">
