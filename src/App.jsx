@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
-import { 
-  signInWithEmailAndPassword, 
-  onAuthStateChanged, 
-  setPersistence, 
-  browserSessionPersistence 
-} from "firebase/auth"; 
+import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth"; 
 import { auth } from './firebase'; 
 import Dashboard from './Dashboard';
 import ForgotPasswordModal from './ForgotPasswordModal'; 
@@ -40,19 +35,13 @@ function App() {
     setLoading(true);
 
     try {
-      // BAGONG DAGDAG: Session Persistence (Auto-logout kapag isinara ang browser)
-      await setPersistence(auth, browserSessionPersistence);
-      
+      // Tinanggal ang setPersistence para bumalik sa default (local persistence)
       const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password.trim());
       setUserEmail(userCredential.user.email); 
       setIsLoggedIn(true);
     } catch (err) {
       console.error(err);
-      if (err.code === 'auth/weak-password') {
-        setError("Password is too weak. Must be 6+ characters with uppercase, lowercase, number, and special character.");
-      } else {
-        setError("Invalid email or password. Please try again.");
-      }
+      setError("Invalid email or password. Please try again.");
     } finally {
       setLoading(false);
     }
