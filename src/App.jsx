@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth"; 
-import { auth } from './firebase'; 
+import { collection, addDoc } from "firebase/firestore"; // BAGONG IMPORT
+import { auth, db } from './firebase'; 
 import Dashboard from './Dashboard';
 import ForgotPasswordModal from './ForgotPasswordModal'; 
 
@@ -35,9 +36,18 @@ function App() {
     setLoading(true);
 
     try {
-      // Tinanggal ang setPersistence para bumalik sa default (local persistence)
       const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password.trim());
       setUserEmail(userCredential.user.email); 
+      
+      // BAGONG LOGIC: I-record ang Time In sa Firebase
+      await addDoc(collection(db, "attendance"), {
+        email: userCredential.user.email,
+        date: new Date().toLocaleDateString('en-US'),
+        timeIn: new Date().toLocaleTimeString('en-US'),
+        timestamp: Date.now(),
+        type: 'TIME_IN'
+      });
+
       setIsLoggedIn(true);
     } catch (err) {
       console.error(err);

@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   LayoutDashboard, Package, ArrowRightLeft, FolderKanban, 
-  Truck, FileText, Users, LogOut, ArrowDownLeft, ArrowUpRight, Activity, ChevronDown, Menu, X, Loader2, TrendingUp
+  Truck, FileText, Users, LogOut, ArrowDownLeft, ArrowUpRight, Activity, ChevronDown, Menu, X, Loader2, TrendingUp, Clock
 } from 'lucide-react';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, addDoc } from "firebase/firestore"; // Idinagdag ang addDoc
 import { db } from './firebase';
 
 import Items from './Items'; 
@@ -17,6 +17,7 @@ import NotificationBell from './NotificationBell';
 import ThemeToggle from './ThemeToggle';
 import ActivityLogs from './ActivityLogs'; 
 import UserProfileModal from './UserProfileModal'; 
+import Attendance from './Attendance'; // BAGONG IMPORT
 
 export default function Dashboard({ onLogout, userEmail }) {
   const [activeMenu, setActiveMenu] = useState('Dashboard');
@@ -33,7 +34,7 @@ export default function Dashboard({ onLogout, userEmail }) {
   
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- IDLE TIMEOUT LOGIC ---
+  // --- IDLE TIMEOUT LOGIC (Optional) ---
   useEffect(() => {
     let idleTimer;
     const IDLE_TIMEOUT = 30 * 60 * 1000; // 30 minuto
@@ -42,7 +43,7 @@ export default function Dashboard({ onLogout, userEmail }) {
       if (idleTimer) clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
         alert("You have been logged out due to inactivity.");
-        onLogout();
+        handleLogout(); // Gamitin ang handleLogout para may time out record
       }, IDLE_TIMEOUT);
     };
 
@@ -104,6 +105,22 @@ export default function Dashboard({ onLogout, userEmail }) {
   const displayName = currentUser ? currentUser.name.split(' ')[0] : 'User';
   const userRole = currentUser ? currentUser.role : 'staff';
 
+  // BAGONG LOGIC PARA SA TIME OUT
+  const handleLogout = async () => {
+    try {
+      await addDoc(collection(db, "attendance"), {
+        email: userEmail,
+        date: new Date().toLocaleDateString('en-US'),
+        timeOut: new Date().toLocaleTimeString('en-US'),
+        timestamp: Date.now(),
+        type: 'TIME_OUT'
+      });
+    } catch (error) {
+      console.error("Error recording time out: ", error);
+    }
+    onLogout();
+  };
+
   const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'staff'] },
     { name: 'Items', icon: Package, roles: ['admin', 'staff'] },
@@ -112,6 +129,7 @@ export default function Dashboard({ onLogout, userEmail }) {
     { name: 'Suppliers', icon: Truck, roles: ['admin'] }, 
     { name: 'Reports', icon: FileText, roles: ['admin'] }, 
     { name: 'Users', icon: Users, roles: ['admin'] }, 
+    { name: 'Attendance', icon: Clock, roles: ['admin'] }, // BAGONG MENU
     { name: 'Activity Logs', icon: Activity, roles: ['admin'] }, 
   ];
 
@@ -225,7 +243,7 @@ export default function Dashboard({ onLogout, userEmail }) {
           </nav>
         </div>
         <div className="p-4 border-t border-green-900">
-          <button onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
             <LogOut className="w-4 h-4" /> Sign out
           </button>
         </div>
@@ -275,7 +293,7 @@ export default function Dashboard({ onLogout, userEmail }) {
                     Profile Settings
                   </button>
                   <button 
-                    onClick={onLogout}
+                    onClick={handleLogout}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                   >
                     Sign Out
@@ -454,6 +472,10 @@ export default function Dashboard({ onLogout, userEmail }) {
           {activeMenu === 'Suppliers' && <Suppliers userRole={userRole} />}
           {activeMenu === 'Reports' && <Reports items={items} movements={movements} projects={projects} />}
           {activeMenu === 'Users' && <UsersPage />}
+          
+          {/* BAGONG ROUTING PARA SA ATTENDANCE */}
+          {activeMenu === 'Attendance' && <Attendance />}
+          
           {activeMenu === 'Activity Logs' && <ActivityLogs logs={logs} />}
         </main>
       </div>
