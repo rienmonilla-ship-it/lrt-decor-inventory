@@ -1,5 +1,6 @@
 import { Download } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { formatCurrency } from './formatCurrency'; // BAGONG IMPORT
 
 export default function Reports({ items, movements, projects }) {
   
@@ -21,7 +22,6 @@ export default function Reports({ items, movements, projects }) {
   const stockInCount = movements?.filter(m => m.type === 'IN').length || 0;
   const stockOutCount = movements?.filter(m => m.type === 'OUT').length || 0;
 
-  // COMPUTE INCOME AT EXPENSES
   const totalIncome = projects.reduce((sum, p) => sum + (p.contractPrice || 0), 0);
   const totalExpenses = projects.reduce((sum, p) => sum + (p.cost || 0), 0);
   const totalProfit = totalIncome - totalExpenses;
@@ -75,19 +75,18 @@ export default function Reports({ items, movements, projects }) {
         </button>
       </div>
 
-      {/* BAGONG STAT CARDS PARA SA INCOME */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Income</p>
-          <h2 className="text-2xl font-bold text-green-600 mt-1">₱{totalIncome.toLocaleString()}</h2>
+          <h2 className="text-2xl font-bold text-green-600 mt-1">{formatCurrency(totalIncome)}</h2>
         </div>
         <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Expenses</p>
-          <h2 className="text-2xl font-bold text-red-600 mt-1">₱{totalExpenses.toLocaleString()}</h2>
+          <h2 className="text-2xl font-bold text-red-600 mt-1">{formatCurrency(totalExpenses)}</h2>
         </div>
         <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Profit</p>
-          <h2 className={`text-2xl font-bold mt-1 ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>₱{totalProfit.toLocaleString()}</h2>
+          <h2 className={`text-2xl font-bold mt-1 ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(totalProfit)}</h2>
         </div>
       </div>
 
@@ -98,7 +97,7 @@ export default function Reports({ items, movements, projects }) {
         </div>
         <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Value</p>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">₱{items.reduce((total, item) => total + (item.qty * item.price), 0).toLocaleString()}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{formatCurrency(items.reduce((total, item) => total + (item.qty * item.price), 0))}</h2>
         </div>
         <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Stock In Transactions</p>
@@ -118,7 +117,7 @@ export default function Reports({ items, movements, projects }) {
               <BarChart data={categoryData} layout="vertical" margin={{ top: 0, right: 0, left: 40, bottom: 0 }}>
                 <XAxis type="number" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#888'}} tickFormatter={(val) => `${val/1000}k`} />
                 <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#666'}} width={130} />
-                <Tooltip cursor={{fill: 'transparent'}} formatter={(val) => `₱${val.toLocaleString()}`} />
+                <Tooltip cursor={{fill: 'transparent'}} formatter={(val) => formatCurrency(val)} />
                 <Bar dataKey="value" fill="#1b4d3e" radius={[0, 4, 4, 0]} barSize={20}>
                   {categoryData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={index === 0 ? '#1b4d3e' : '#40916c'} />
@@ -136,7 +135,7 @@ export default function Reports({ items, movements, projects }) {
               <BarChart data={topItemsData} layout="vertical" margin={{ top: 0, right: 30, left: 60, bottom: 0 }}>
                 <XAxis type="number" hide />
                 <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#333', fontWeight: 'bold'}} width={130} />
-                <Tooltip cursor={{fill: 'transparent'}} formatter={(val) => `₱${val.toLocaleString()}`} />
+                <Tooltip cursor={{fill: 'transparent'}} formatter={(val) => formatCurrency(val)} />
                 <Bar dataKey="value" fill="#1b4d3e" radius={[0, 4, 4, 0]} barSize={12} />
               </BarChart>
             </ResponsiveContainer>

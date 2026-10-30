@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { formatCurrency } from './formatCurrency'; // BAGONG IMPORT
 
 export default function ProjectModal({ isOpen, onClose, onSave, editingProject }) {
   const [formData, setFormData] = useState(
@@ -10,7 +11,7 @@ export default function ProjectModal({ isOpen, onClose, onSave, editingProject }
       status: 'Active', 
       materials: 0, 
       cost: 0,
-      contractPrice: 0 // BAGONG FIELD
+      contractPrice: 0
     }
   );
 
@@ -75,6 +76,9 @@ export default function ProjectModal({ isOpen, onClose, onSave, editingProject }
             <div>
               <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 uppercase">Contract Price (₱)</label>
               <input type="number" name="contractPrice" min="0" step="0.01" value={formData.contractPrice} onChange={handleChange} className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-green-800 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600" />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {formatCurrency(formData.contractPrice || 0)}
+              </p>
             </div>
           </div>
 
