@@ -33,6 +33,36 @@ export default function Dashboard({ onLogout, userEmail }) {
   
   const [isLoading, setIsLoading] = useState(true);
 
+  // --- IDLE TIMEOUT LOGIC ---
+  useEffect(() => {
+    let idleTimer;
+    const IDLE_TIMEOUT = 30 * 60 * 1000; // 30 minuto
+
+    const resetTimer = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        alert("You have been logged out due to inactivity.");
+        onLogout();
+      }, IDLE_TIMEOUT);
+    };
+
+    window.addEventListener('mousemove', resetTimer);
+    window.addEventListener('keydown', resetTimer);
+    window.addEventListener('click', resetTimer);
+    window.addEventListener('scroll', resetTimer);
+
+    resetTimer();
+
+    return () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      window.removeEventListener('mousemove', resetTimer);
+      window.removeEventListener('keydown', resetTimer);
+      window.removeEventListener('click', resetTimer);
+      window.removeEventListener('scroll', resetTimer);
+    };
+  }, [onLogout]);
+
+  // --- KONEKSYON SA FIREBASE ---
   useEffect(() => {
     const unsubItems = onSnapshot(collection(db, "items"), (snapshot) => {
       setItems(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
@@ -89,12 +119,9 @@ export default function Dashboard({ onLogout, userEmail }) {
 
   const totalItems = items.length;
   const totalStockValue = items.reduce((total, item) => total + (item.qty * item.price), 0);
-  
   const totalIncome = projects.reduce((sum, p) => sum + (p.contractPrice || 0), 0);
-  
   const lowStockItems = items.filter(item => item.qty <= item.min);
   const lowStockCount = lowStockItems.length;
-  
   const activeProjects = projects.filter(p => p.status === 'Active');
   const activeProjectsCount = activeProjects.length;
 
