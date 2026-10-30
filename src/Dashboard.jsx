@@ -113,7 +113,6 @@ export default function Dashboard({ onLogout, userEmail }) {
     }));
   }, [items]);
 
-  // BAGONG LOGIC PARA SA TOTOONG PER-DAY CHART
   const lineData = useMemo(() => {
     const last7Days = [];
     for (let i = 6; i >= 0; i--) {
@@ -163,7 +162,7 @@ export default function Dashboard({ onLogout, userEmail }) {
         ></div>
       )}
 
-      {/* SIDEBAR - Responsive */}
+      {/* SIDEBAR */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0e2a21] text-white flex flex-col justify-between border-r border-[#184536] transform transition-transform duration-300 ease-in-out ${
         isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
       } md:relative md:translate-x-0`}>
