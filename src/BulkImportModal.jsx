@@ -32,17 +32,14 @@ export default function BulkImportModal({ isOpen, onClose }) {
       const text = e.target.result;
       const lines = text.split('\n').filter(line => line.trim() !== '');
       
-      // Skip header row
       const dataLines = lines.slice(1);
       let successCount = 0;
       let failCount = 0;
 
-      // Kunin lahat ng items mula sa Firebase
       const itemsSnapshot = await getDocs(collection(db, "items"));
       const existingItems = itemsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
 
       for (const line of dataLines) {
-        // Format: ID,Name,Category,Unit,Qty,Min,Price
         const columns = line.split(',');
         if (columns.length < 7) {
           failCount++;
@@ -51,7 +48,6 @@ export default function BulkImportModal({ isOpen, onClose }) {
 
         const [id, name, category, unit, qty, min, price] = columns.map(col => col.trim().replace(/^"|"$/g, ''));
         
-        // Hanapin ang item sa Firebase base sa Item ID
         const itemToUpdate = existingItems.find(item => item.id === id);
 
         if (itemToUpdate) {
