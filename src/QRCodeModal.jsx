@@ -1,10 +1,17 @@
+import { useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { X, Printer } from 'lucide-react';
 
 export default function QRCodeModal({ isOpen, onClose, item }) {
+  const qrRef = useRef(null);
+
   if (!isOpen || !item) return null;
 
   const handlePrint = () => {
+    // Kunin ang QR code bilang image data URL
+    const canvas = qrRef.current.querySelector('canvas');
+    const qrImageUrl = canvas.toDataURL('image/png');
+
     // Gumawa ng bagong window para sa print
     const printWindow = window.open('', '_blank', 'width=600,height=600');
     printWindow.document.write(`
@@ -26,10 +33,12 @@ export default function QRCodeModal({ isOpen, onClose, item }) {
               border: 2px solid #000;
               padding: 20px;
               border-radius: 8px;
+              width: 350px;
             }
-            h1 { font-size: 18px; margin-bottom: 10px; }
-            h2 { font-size: 24px; margin: 10px 0; }
-            p { font-size: 14px; color: #333; }
+            h1 { font-size: 16px; margin-bottom: 10px; letter-spacing: 1px; }
+            h2 { font-size: 22px; margin: 10px 0; }
+            p { font-size: 14px; color: #333; margin: 5px 0; }
+            img { margin-top: 15px; width: 200px; height: 200px; }
           </style>
         </head>
         <body>
@@ -38,9 +47,7 @@ export default function QRCodeModal({ isOpen, onClose, item }) {
             <h2>${item.name}</h2>
             <p>ID: ${item.id}</p>
             <p>Spec: ${item.spec || '-'}</p>
-            <div style="margin-top: 20px;">
-              ${document.getElementById('qr-canvas-print').innerHTML}
-            </div>
+            <img src="${qrImageUrl}" alt="QR Code" />
           </div>
         </body>
       </html>
@@ -62,16 +69,13 @@ export default function QRCodeModal({ isOpen, onClose, item }) {
         </div>
 
         <div className="p-8 flex flex-col items-center justify-center space-y-4">
-          <div className="bg-white p-4 border border-gray-200 rounded-xl shadow-sm">
-            {/* IDINAGDAG NATIN ANG ID NA 'qr-canvas-print' PARA MAKOPYA SA PRINT */}
-            <div id="qr-canvas-print">
-              <QRCodeCanvas 
-                value={item.id} 
-                size={200}
-                level={"H"}
-                includeMargin={true}
-              />
-            </div>
+          <div className="bg-white p-4 border border-gray-200 rounded-xl shadow-sm" ref={qrRef}>
+            <QRCodeCanvas 
+              value={item.id} 
+              size={200}
+              level={"H"}
+              includeMargin={true}
+            />
           </div>
           
           <div className="text-center">
