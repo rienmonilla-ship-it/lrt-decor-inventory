@@ -1,18 +1,18 @@
 import { useState } from 'react';
-import { Plus, Edit, Trash2, Eye } from 'lucide-react'; 
-import { collection, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { collection, addDoc, updateDoc, deleteDoc, doc, runTransaction, increment } from "firebase/firestore";
 import { db } from './firebase';
 import ProjectModal from './ProjectModal';
 import ConfirmModal from './ConfirmModal';
 import Toast from './Toast';
 import ProjectMaterialsModal from './ProjectMaterialsModal';
-import { formatCurrency } from './formatCurrency'; // BAGONG IMPORT
+import { formatCurrency } from './formatCurrency';
 
-export default function Projects({ projects, movements, items, userRole }) {
+export default function Projects({ projects, movements, items, userRole, currentUserName }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [toast, setToast] = useState(null);
-  
+ 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState(null);
 
@@ -33,6 +33,63 @@ export default function Projects({ projects, movements, items, userRole }) {
     } catch (error) {
       console.error("Error saving project: ", error);
       setToast({ message: 'Failed to save project.', type: 'error' });
+    }
+  };
+
+  // BAGONG FUNCTION PARA SA ADD MATERIAL (TRANSACTION)
+  const handleAddMaterialToProject = async (projectId, projectName, item, qtyToAdd) => {
+    try {
+      await runTransaction(db, async (transaction) => {
+        const itemRef = doc(db, "items", item.id);
+        const itemDoc = await transaction.get(itemRef);
+        
+        if (!itemDoc.exists()) throw "Item does not exist!";
+        const currentQty = itemDoc.data().qty;
+        
+        if (currentQty < qtyToAdd) {
+          throw `Kulang ang stock! Meron lang tayong ${currentQty} ${item.unit} ng ${item.name}.`;
+        }
+
+        const totalCostAdded = qtyToAdd * item.price;
+
+        // Bawas sa Items
+        transaction.update(itemRef, { qty: currentQty - qtyToAdd });
+
+        // Dagdag sa Project
+        const projectRef = doc(db, "projects", projectId);
+        transaction.update(projectRef, {
+          materials: increment(qtyToAdd),
+          cost: increment(totalCostAdded)
+        });
+
+        // Record sa Movements
+        const movementRef = doc(collection(db, "movements"));
+        transaction.set(movementRef, {
+          date: new Date().toLocaleString(),
+          timestamp: new Date().getTime(),
+          type: 'OUT',
+          item: item.name,
+          qty: qtyToAdd,
+          reason: 'Project Allocation (Modal)',
+          project: projectName,
+          user: currentUserName || 'Admin'
+        });
+
+        // Record sa Logs
+        const logRef = doc(collection(db, "logs"));
+        transaction.set(logRef, {
+          date: new Date().toLocaleString(),
+          timestamp: new Date().getTime(),
+          user: currentUserName || 'Admin',
+          action: 'STOCK_OUT',
+          details: `Allocated ${qtyToAdd} ${item.unit} of ${item.name} to ${projectName}`
+        });
+      });
+
+      setToast({ message: 'Material added successfully!', type: 'success' });
+    } catch (error) {
+      console.error("Transaction failed: ", error);
+      setToast({ message: error.toString() || 'Failed to add material.', type: 'error' });
     }
   };
 
@@ -77,7 +134,7 @@ export default function Projects({ projects, movements, items, userRole }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {projects.map((project) => {
           const profit = (project.contractPrice || 0) - (project.cost || 0);
-          
+         
           return (
             <div key={project.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col">
               <div className="p-6 pb-4 border-b border-gray-100 dark:border-gray-700">
@@ -91,7 +148,7 @@ export default function Projects({ projects, movements, items, userRole }) {
                     <button onClick={() => openMaterialsModal(project)} title="View Materials" className="p-1.5 text-gray-400 hover:text-green-600 rounded">
                       <Eye className="w-4 h-4" />
                     </button>
-                    
+                   
                     {userRole === 'admin' && (
                       <>
                         <button onClick={() => openEditModal(project)} className="p-1.5 text-gray-400 hover:text-blue-600 rounded">
@@ -130,15 +187,17 @@ export default function Projects({ projects, movements, items, userRole }) {
         })}
       </div>
 
-      <ProjectModal 
+      <ProjectModal
         key={editingProject ? editingProject.id : 'new-project'}
-        isOpen={isModalOpen} 
-        onClose={closeModal} 
-        onSave={handleSaveProject} 
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onSave={handleSaveProject}
         editingProject={editingProject}
+        items={items} 
+        onAddMaterial={handleAddMaterialToProject}
       />
 
-      <ConfirmModal 
+      <ConfirmModal
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={confirmDelete}
@@ -147,7 +206,7 @@ export default function Projects({ projects, movements, items, userRole }) {
         confirmText="Delete Project"
       />
 
-      <ProjectMaterialsModal 
+      <ProjectMaterialsModal
         isOpen={isMaterialsOpen}
         onClose={() => setIsMaterialsOpen(false)}
         project={selectedProject}

@@ -1,9 +1,9 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore"; 
-import { getAuth } from "firebase/auth"; 
+import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAAoc0cTY6bVDC_GbOzU8Md49Pdcj3arsQ", // TAMANG API KEY NA
+  apiKey: "AIzaSyAAoc0cTY6bVDC_GbOzU8Md49Pdcj3arsQ",
   authDomain: "lrt-decor-inventory.firebaseapp.com",
   projectId: "lrt-decor-inventory",
   storageBucket: "lrt-decor-inventory.firebasestorage.app",
@@ -14,4 +14,4 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
-export const auth = getAuth(app); 
+export const auth = getAuth(app);
