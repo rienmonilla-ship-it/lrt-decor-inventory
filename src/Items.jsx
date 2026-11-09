@@ -10,7 +10,7 @@ import PrintSlipModal from './PrintSlipModal';
 import Toast from './Toast';
 import ConfirmModal from './ConfirmModal';
 import ScanActionModal from './ScanActionModal';
-import BulkImportModal from './BulkImportModal'; // BAGONG IMPORT
+import BulkImportModal from './BulkImportModal';
 
 export default function Items({ items, defaultFilterLowStock, currentUserName, userRole, projects }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,7 +30,6 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
   const [isScanActionOpen, setIsScanActionOpen] = useState(false);
   const [scannedItem, setScannedItem] = useState(null);
 
-  // BAGONG STATE PARA SA BULK IMPORT
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
@@ -202,6 +201,9 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
     }, 100);
   };
 
+  // ==========================================
+  // DITO ANG BINAGO NATIN PARA MAGING A-Z
+  // ==========================================
   const filteredItems = items
     .filter(item => {
       const matchSearch = 
@@ -214,13 +216,17 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
       return matchSearch && matchCategory;
     })
     .sort((a, b) => {
+      // 1. Kung naka-enable ang "Low Stock Filter" mula sa Dashboard
       if (defaultFilterLowStock) {
         const aLow = a.qty <= a.min;
         const bLow = b.qty <= b.min;
-        if (aLow && !bLow) return -1;
-        if (!aLow && bLow) return 1;
+        if (aLow && !bLow) return -1; // Mauuna ang low stock
+        if (!aLow && bLow) return 1;  // Mahuhuli ang hindi low stock
       }
-      return 0;
+      
+      // 2. Para sa A-Z Alphabetical Sorting
+      // Ginagamit natin ang localeCompare para ma-handle nang maayos ang numbers at capitalization
+      return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
     });
 
   return (
@@ -375,7 +381,6 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
         confirmText="Delete Item"
       />
 
-      {/* BAGONG BULK IMPORT MODAL */}
       <BulkImportModal 
         isOpen={isImportModalOpen} 
         onClose={() => setIsImportModalOpen(false)} 
