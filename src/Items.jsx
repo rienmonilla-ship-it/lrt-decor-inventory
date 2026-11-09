@@ -285,23 +285,10 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
               filteredItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                   
-                  {/* DITO ANG BINAGO: MAY THUMBNAIL IMAGE NA */}
-                  <td className="p-4 flex items-center gap-3">
-                    {item.imageUrl ? (
-                      <img 
-                        src={item.imageUrl} 
-                        alt={item.name} 
-                        className="w-10 h-10 rounded-md object-cover border border-gray-200 dark:border-gray-700 flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-md bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600 flex-shrink-0">
-                        <span className="text-[10px] text-gray-400">No Img</span>
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-semibold text-gray-800 dark:text-white text-sm">{item.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</p>
-                    </div>
+                  {/* ITO NA ULIT ANG DATING SIMPLENG TD */}
+                  <td className="p-4">
+                    <p className="font-semibold text-gray-800 dark:text-white text-sm">{item.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</p>
                   </td>
 
                   <td className="p-4 hidden md:table-cell">
