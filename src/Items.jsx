@@ -201,9 +201,6 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
     }, 100);
   };
 
-  // ==========================================
-  // DITO ANG BINAGO NATIN PARA MAGING A-Z
-  // ==========================================
   const filteredItems = items
     .filter(item => {
       const matchSearch = 
@@ -216,16 +213,12 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
       return matchSearch && matchCategory;
     })
     .sort((a, b) => {
-      // 1. Kung naka-enable ang "Low Stock Filter" mula sa Dashboard
       if (defaultFilterLowStock) {
         const aLow = a.qty <= a.min;
         const bLow = b.qty <= b.min;
-        if (aLow && !bLow) return -1; // Mauuna ang low stock
-        if (!aLow && bLow) return 1;  // Mahuhuli ang hindi low stock
+        if (aLow && !bLow) return -1;
+        if (!aLow && bLow) return 1;
       }
-      
-      // 2. Para sa A-Z Alphabetical Sorting
-      // Ginagamit natin ang localeCompare para ma-handle nang maayos ang numbers at capitalization
       return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
     });
 
@@ -291,10 +284,26 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
             {filteredItems.length > 0 ? (
               filteredItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                  <td className="p-4">
-                    <p className="font-semibold text-gray-800 dark:text-white text-sm">{item.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</p>
+                  
+                  {/* DITO ANG BINAGO: MAY THUMBNAIL IMAGE NA */}
+                  <td className="p-4 flex items-center gap-3">
+                    {item.imageUrl ? (
+                      <img 
+                        src={item.imageUrl} 
+                        alt={item.name} 
+                        className="w-10 h-10 rounded-md object-cover border border-gray-200 dark:border-gray-700 flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-md bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600 flex-shrink-0">
+                        <span className="text-[10px] text-gray-400">No Img</span>
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-semibold text-gray-800 dark:text-white text-sm">{item.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</p>
+                    </div>
                   </td>
+
                   <td className="p-4 hidden md:table-cell">
                     <span className="inline-block px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-md border border-gray-200 dark:border-gray-600 whitespace-nowrap">
                       {item.category}
@@ -305,6 +314,7 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
                   <td className="p-4 text-right text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">{item.min}</td>
                   <td className="p-4 text-right text-sm text-gray-800 dark:text-white hidden lg:table-cell">₱{item.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                   <td className="p-4 text-right text-sm font-bold text-gray-800 dark:text-white hidden md:table-cell">₱{(item.qty * item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                  
                   <td className="p-4 text-center sticky right-0 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.1)]">
                     <div className="flex items-center justify-center gap-1">
                       <button onClick={() => openQRModal(item)} title="View QR Code" className="p-1.5 text-gray-400 hover:text-purple-600 rounded transition-colors">
