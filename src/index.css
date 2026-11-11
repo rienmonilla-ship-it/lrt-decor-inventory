@@ -1,67 +1,37 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@custom-variant dark (&:where(.dark, .dark *));
-
-@keyframes slide-in {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-.animate-slide-in {
-  animation: slide-in 0.3s ease-out;
-}
-
-/* --- PRINT STYLES --- */
+/* Print Styles */
 @media print {
-  /* Itago ang lahat ng elements sa page */
-  body * {
-    visibility: hidden;
+  /* Itago ang URL at date/time sa header/footer */
+  @page {
+    margin: 0.5in;
+    size: auto;
   }
 
-  /* Ipakita lang ang print area at ang mga anak nito */
-  #print-area, #print-area * {
-    visibility: visible;
-  }
-
-  /* I-position ang print area sa taas ng page */
-  #print-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
+  /* Gawing puti at malinis ang background */
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
     background: white !important;
-    color: black !important;
-    padding: 20px;
   }
 
-  /* Pilitin ang lahat ng text na maging itim */
-  #print-area h1, 
-  #print-area h2, 
-  #print-area p, 
-  #print-area span, 
-  #print-area td, 
-  #print-area th,
-  #print-area div {
-    color: black !important;
-    background: transparent !important;
-  }
-
-  /* Gawing itim ang border */
-  #print-area table, 
-  #print-area tr, 
-  #print-area td, 
-  #print-area th {
-    border-color: black !important;
-  }
-
-  /* Itago ang mga buttons sa print */
-  button {
+  /* Itago ang mga buttons at navigation */
+  .print\:hidden {
     display: none !important;
+  }
+
+  /* Ayusin ang layout para sa print */
+  .print-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Itago ang scrollbar sa print */
+  ::-webkit-scrollbar {
+    display: none;
   }
 }
