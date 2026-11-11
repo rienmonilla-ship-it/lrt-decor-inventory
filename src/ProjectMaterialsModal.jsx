@@ -28,11 +28,14 @@ export default function ProjectMaterialsModal({ isOpen, onClose, project, moveme
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+    // IDINAGDAG NATIN ANG modal-overlay CLASS
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 modal-overlay">
+      
+      {/* IDINAGDAG NATIN ANG modal-content CLASS AT print classes */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh] modal-content print:max-h-none print:overflow-visible print:shadow-none print:w-full print:max-w-full">
         
-        {/* Header */}
-        <div className="flex justify-between items-center p-5 border-b border-gray-200 dark:border-gray-700">
+        {/* HEADER - ITATAGO SA PRINT */}
+        <div className="flex justify-between items-center p-5 border-b border-gray-200 dark:border-gray-700 print:hidden">
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Project Materials</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">{project.name} · {project.client}</p>
@@ -42,8 +45,9 @@ export default function ProjectMaterialsModal({ isOpen, onClose, project, moveme
           </button>
         </div>
 
-        {/* Printable Area */}
-        <div id="print-area" className="p-6 overflow-y-auto">
+        {/* PRINTABLE AREA - ITO ANG LALABAS SA PRINT */}
+        <div id="print-area" className="p-6 overflow-y-auto print:overflow-visible print:p-0">
+          
           {/* Header ng Resibo */}
           <div className="text-center mb-6 border-b border-dashed border-gray-300 dark:border-gray-600 pb-4">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">LRT DECOR PRODUCTS</h1>
@@ -100,14 +104,26 @@ export default function ProjectMaterialsModal({ isOpen, onClose, project, moveme
           </table>
 
           {/* Grand Total */}
-          <div className="border-t-2 border-gray-300 dark:border-gray-600 pt-4 flex justify-between items-center">
+          <div className="border-t-2 border-gray-300 dark:border-gray-600 pt-4 flex justify-between items-center mb-12">
             <p className="text-lg font-bold text-gray-900 dark:text-white">Grand Total:</p>
             <p className="text-2xl font-bold text-[#0e2a21] dark:text-green-400">₱{grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
           </div>
+
+          {/* Signature Area - Lalabas lang sa print */}
+          <div className="hidden print:flex justify-between mt-16 px-8">
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-10">Prepared By:</p>
+              <p className="border-t border-gray-400 w-48 pt-1 text-sm text-gray-800">Signature</p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-10">Received By:</p>
+              <p className="border-t border-gray-400 w-48 pt-1 text-sm text-gray-800">Signature</p>
+            </div>
+          </div>
         </div>
 
-        {/* Footer Buttons */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-gray-900">
+        {/* FOOTER BUTTONS - ITATAGO SA PRINT */}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-gray-900 print:hidden">
           <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Close</button>
           <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#0e2a21] hover:bg-[#184536] rounded-lg">
             <Printer className="w-4 h-4" /> Print Breakdown
