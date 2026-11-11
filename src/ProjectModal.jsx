@@ -87,11 +87,14 @@ export default function ProjectModal({ isOpen, onClose, onSave, editingProject, 
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+    // IDINAGDAG ANG modal-overlay
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 modal-overlay">
+      
+      {/* IDINAGDAG ANG modal-content */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] modal-content print:max-h-none print:overflow-visible print:shadow-none">
         
         {/* HEADER */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700 print:hidden">
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">{editingProject ? 'Edit Project' : 'Add New Project'}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Enter project details below.</p>
@@ -100,7 +103,7 @@ export default function ProjectModal({ isOpen, onClose, onSave, editingProject, 
         </div>
 
         {/* BODY */}
-        <div className="overflow-y-auto">
+        <div className="overflow-y-auto print:overflow-visible">
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div>
               <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 uppercase">Project Name</label>
@@ -159,7 +162,7 @@ export default function ProjectModal({ isOpen, onClose, onSave, editingProject, 
 
             {/* BAGONG SECTION PARA SA ADD MATERIAL */}
             {editingProject && (
-              <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+              <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4 print:hidden">
                 <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
                   <PackageSearch className="w-4 h-4" /> Allocate Material
                 </h3>
@@ -175,7 +178,6 @@ export default function ProjectModal({ isOpen, onClose, onSave, editingProject, 
                       onChange={(e) => {
                         setSearchQuery(e.target.value);
                         setIsDropdownOpen(true);
-                        // Kung binura ang text, i-clear ang napiling item
                         if (e.target.value === '') setSelectedItemId('');
                       }}
                       onFocus={() => setIsDropdownOpen(true)}
@@ -241,7 +243,7 @@ export default function ProjectModal({ isOpen, onClose, onSave, editingProject, 
             )}
 
             {/* FOOTER BUTTONS */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-6">
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-6 print:hidden">
               <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Cancel</button>
               <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-[#0e2a21] hover:bg-[#184536] rounded-lg">
                 {editingProject ? 'Update Project' : 'Save Project'}
