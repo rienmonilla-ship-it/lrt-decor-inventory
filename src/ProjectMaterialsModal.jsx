@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { X, Printer, Download } from 'lucide-react';
+import { X, Download } from 'lucide-react';
 import { formatCurrency } from './formatCurrency';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro'; // <--- ITO ANG BAGO
 
 export default function ProjectMaterialsModal({ isOpen, onClose, project, movements, items }) {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -34,8 +34,12 @@ export default function ProjectMaterialsModal({ isOpen, onClose, project, moveme
     const input = document.getElementById('pdf-receipt-container');
     
     try {
-      // Kunin ang picture ng receipt container
-      const canvas = await html2canvas(input, { scale: 2 });
+      // Kunin ang picture ng receipt container (may scale 2 para malinaw)
+      const canvas = await html2canvas(input, { 
+        scale: 2, 
+        useCORS: true,
+        logging: false
+      });
       const imgData = canvas.toDataURL('image/png');
       
       // Gumawa ng PDF (A4 size)
@@ -56,9 +60,9 @@ export default function ProjectMaterialsModal({ isOpen, onClose, project, moveme
   return (
     <>
       {/* ========================================= */}
-      {/* NORMAL SCREEN VIEW */}
+      {/* NORMAL SCREEN VIEW (HINDI LALABAS SA PDF) */}
       {/* ========================================= */}
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 print:hidden">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col">
           
           <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
@@ -112,9 +116,9 @@ export default function ProjectMaterialsModal({ isOpen, onClose, project, moveme
       </div>
 
       {/* ========================================= */}
-      {/* HIDDEN PDF TEMPLATE */}
+      {/* HIDDEN PDF TEMPLATE (ITO ANG GAGAWING PDF) */}
       {/* ========================================= */}
-      <div className="absolute -left-[9999px] top-0">
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
         <div id="pdf-receipt-container" className="bg-white p-10 w-[210mm] text-black" style={{ minHeight: '297mm' }}>
           
           <div className="mb-6">
