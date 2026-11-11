@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   LayoutDashboard, Package, ArrowRightLeft, FolderKanban, 
-  Truck, FileText, Users, LogOut, ArrowDownLeft, ArrowUpRight, Activity, ChevronDown, Menu, X, Loader2, TrendingUp, Clock
+  Truck, FileText, Users, LogOut, ArrowDownLeft, ArrowUpRight, Activity, ChevronDown, Menu, X, Loader2, TrendingUp
 } from 'lucide-react';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { collection, onSnapshot, addDoc } from "firebase/firestore"; // Idinagdag ang addDoc
+import { collection, onSnapshot } from "firebase/firestore";
 import { db } from './firebase';
 
 import Items from './Items'; 
@@ -17,7 +17,6 @@ import NotificationBell from './NotificationBell';
 import ThemeToggle from './ThemeToggle';
 import ActivityLogs from './ActivityLogs'; 
 import UserProfileModal from './UserProfileModal'; 
-import Attendance from './Attendance'; // BAGONG IMPORT
 
 export default function Dashboard({ onLogout, userEmail }) {
   const [activeMenu, setActiveMenu] = useState('Dashboard');
@@ -34,16 +33,16 @@ export default function Dashboard({ onLogout, userEmail }) {
   
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- IDLE TIMEOUT LOGIC (Optional) ---
+  // --- IDLE TIMEOUT LOGIC ---
   useEffect(() => {
     let idleTimer;
-    const IDLE_TIMEOUT = 30 * 60 * 1000; // 30 minuto
+    const IDLE_TIMEOUT = 30 * 60 * 1000; 
 
     const resetTimer = () => {
       if (idleTimer) clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
         alert("You have been logged out due to inactivity.");
-        handleLogout(); // Gamitin ang handleLogout para may time out record
+        handleLogout(); 
       }, IDLE_TIMEOUT);
     };
 
@@ -105,19 +104,8 @@ export default function Dashboard({ onLogout, userEmail }) {
   const displayName = currentUser ? currentUser.name.split(' ')[0] : 'User';
   const userRole = currentUser ? currentUser.role : 'staff';
 
-  // BAGONG LOGIC PARA SA TIME OUT
-  const handleLogout = async () => {
-    try {
-      await addDoc(collection(db, "attendance"), {
-        email: userEmail,
-        date: new Date().toLocaleDateString('en-US'),
-        timeOut: new Date().toLocaleTimeString('en-US'),
-        timestamp: Date.now(),
-        type: 'TIME_OUT'
-      });
-    } catch (error) {
-      console.error("Error recording time out: ", error);
-    }
+  // BINALIK SA DATING SIMPLENG LOGOUT
+  const handleLogout = () => {
     onLogout();
   };
 
@@ -129,7 +117,6 @@ export default function Dashboard({ onLogout, userEmail }) {
     { name: 'Suppliers', icon: Truck, roles: ['admin'] }, 
     { name: 'Reports', icon: FileText, roles: ['admin'] }, 
     { name: 'Users', icon: Users, roles: ['admin'] }, 
-    { name: 'Attendance', icon: Clock, roles: ['admin'] }, // BAGONG MENU
     { name: 'Activity Logs', icon: Activity, roles: ['admin'] }, 
   ];
 
@@ -472,10 +459,6 @@ export default function Dashboard({ onLogout, userEmail }) {
           {activeMenu === 'Suppliers' && <Suppliers userRole={userRole} />}
           {activeMenu === 'Reports' && <Reports items={items} movements={movements} projects={projects} />}
           {activeMenu === 'Users' && <UsersPage />}
-          
-          {/* BAGONG ROUTING PARA SA ATTENDANCE */}
-          {activeMenu === 'Attendance' && <Attendance />}
-          
           {activeMenu === 'Activity Logs' && <ActivityLogs logs={logs} />}
         </main>
       </div>

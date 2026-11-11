@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth"; 
-import { collection, addDoc } from "firebase/firestore"; // BAGONG IMPORT
-import { auth, db } from './firebase'; 
+import { auth } from './firebase'; 
 import Dashboard from './Dashboard';
 import ForgotPasswordModal from './ForgotPasswordModal'; 
 
@@ -39,14 +38,7 @@ function App() {
       const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password.trim());
       setUserEmail(userCredential.user.email); 
       
-      // BAGONG LOGIC: I-record ang Time In sa Firebase
-      await addDoc(collection(db, "attendance"), {
-        email: userCredential.user.email,
-        date: new Date().toLocaleDateString('en-US'),
-        timeIn: new Date().toLocaleTimeString('en-US'),
-        timestamp: Date.now(),
-        type: 'TIME_IN'
-      });
+      // Tinanggal na ang attendance recording dito
 
       setIsLoggedIn(true);
     } catch (err) {
