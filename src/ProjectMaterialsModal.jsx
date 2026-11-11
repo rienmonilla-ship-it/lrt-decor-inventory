@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { X, Download } from 'lucide-react';
 import { formatCurrency } from './formatCurrency';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas-pro'; // <--- ITO ANG BAGO
+import html2canvas from 'html2canvas-pro';
 
 export default function ProjectMaterialsModal({ isOpen, onClose, project, movements, items }) {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -34,20 +34,37 @@ export default function ProjectMaterialsModal({ isOpen, onClose, project, moveme
     const input = document.getElementById('pdf-receipt-container');
     
     try {
-      // Kunin ang picture ng receipt container (may scale 2 para malinaw)
+      // I-set ang windowHeight at scrollHeight para makuha ang BUONG laman
       const canvas = await html2canvas(input, { 
         scale: 2, 
         useCORS: true,
-        logging: false
+        logging: false,
+        windowHeight: input.scrollHeight, // <--- IMPORTANTE ITO
+        scrollY: -window.scrollY
       });
+      
       const imgData = canvas.toDataURL('image/png');
-      
-      // Gumawa ng PDF (A4 size)
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // I-add ang unang pahina
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      // Kung sobra sa isang pahina, gumawa ng bagong pahina at ilagay ang natitira
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+      
       pdf.save(`Project_${project.name}_Materials.pdf`);
     } catch (error) {
       console.error("Error generating PDF: ", error);
@@ -60,7 +77,7 @@ export default function ProjectMaterialsModal({ isOpen, onClose, project, moveme
   return (
     <>
       {/* ========================================= */}
-      {/* NORMAL SCREEN VIEW (HINDI LALABAS SA PDF) */}
+      {/* NORMAL SCREEN VIEW */}
       {/* ========================================= */}
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col">
@@ -116,7 +133,7 @@ export default function ProjectMaterialsModal({ isOpen, onClose, project, moveme
       </div>
 
       {/* ========================================= */}
-      {/* HIDDEN PDF TEMPLATE (ITO ANG GAGAWING PDF) */}
+      {/* HIDDEN PDF TEMPLATE (DAPAT NASA LABAS ITO NG MODAL) */}
       {/* ========================================= */}
       <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
         <div id="pdf-receipt-container" className="bg-white p-10 w-[210mm] text-black" style={{ minHeight: '297mm' }}>
