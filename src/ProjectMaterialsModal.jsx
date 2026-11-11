@@ -4,24 +4,17 @@ import { formatCurrency } from './formatCurrency';
 export default function ProjectMaterialsModal({ isOpen, onClose, project, movements, items }) {
   if (!isOpen || !project) return null;
 
-  // Kunin lahat ng OUT movements para sa project na ito
   const projectMovements = movements.filter(
     m => m.project === project.name && m.type === 'OUT'
   );
 
-  // I-compute ang total price per item
   const materialsList = projectMovements.map(move => {
     const itemData = items.find(i => i.name === move.item);
     const unitPrice = itemData ? itemData.price : 0;
     const totalPrice = unitPrice * move.qty;
-    return {
-      ...move,
-      unitPrice,
-      totalPrice
-    };
+    return { ...move, unitPrice, totalPrice };
   });
 
-  // Grand Total
   const grandTotal = materialsList.reduce((sum, m) => sum + m.totalPrice, 0);
 
   const handlePrint = () => {
@@ -31,7 +24,9 @@ export default function ProjectMaterialsModal({ isOpen, onClose, project, moveme
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 modal-overlay">
       
+      {/* ========================================= */}
       {/* SCREEN VIEW (HINDI LALABAS SA PRINT) */}
+      {/* ========================================= */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col print:hidden">
         
         <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
@@ -84,7 +79,6 @@ export default function ProjectMaterialsModal({ isOpen, onClose, project, moveme
       {/* ========================================= */}
       <div className="hidden print:block print:bg-white print:text-black print:p-8 print:absolute print:inset-0">
         
-        {/* Header */}
         <div className="mb-4">
           <h1 className="text-2xl font-bold uppercase">LRT DECOR PRODUCTS</h1>
           <p className="text-sm">San Jose del Monte, Bulacan</p>
@@ -103,7 +97,6 @@ export default function ProjectMaterialsModal({ isOpen, onClose, project, moveme
 
         <div className="mb-4 border-b-2 border-black"></div>
 
-        {/* Print Table - Walang scrollbar, buong listahan */}
         <table className="w-full border-collapse border border-black text-sm">
           <thead>
             <tr className="bg-gray-200">
@@ -131,7 +124,6 @@ export default function ProjectMaterialsModal({ isOpen, onClose, project, moveme
           </tfoot>
         </table>
 
-        {/* Signature Area */}
         <div className="flex justify-between mt-20 px-8 text-sm">
           <div className="text-center w-48">
             <p className="mb-10">Prepared By:</p>
