@@ -33,8 +33,6 @@ export default function Dashboard({ onLogout, userEmail }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
   
   const [isLoading, setIsLoading] = useState(true);
-
-  // BAGONG STATE PARA SA RESTOCK REDIRECT
   const [initialStockItem, setInitialStockItem] = useState(null);
 
   // --- IDLE TIMEOUT LOGIC ---
@@ -189,20 +187,21 @@ export default function Dashboard({ onLogout, userEmail }) {
   }
 
   return (
-    <div className="flex h-screen w-full font-sans bg-gray-50 dark:bg-gray-900 transition-colors relative">
+    // IDINAGDAG NATIN ANG "print:hidden" SA MGA HINDI DAPAT LUMABAS SA PRINT
+    <div className="flex h-screen w-full font-sans bg-gray-50 dark:bg-gray-900 transition-colors relative print:h-screen print:overflow-hidden">
       
+      {/* MOBILE OVERLAY */}
       {isMobileMenuOpen && (
         <div 
           onClick={() => setIsMobileMenuOpen(false)} 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/50 z-40 md:hidden print:hidden"
         ></div>
       )}
 
       {/* SIDEBAR */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0e2a21] text-white flex flex-col justify-between border-r border-[#184536] transform transition-transform duration-300 ease-in-out ${
         isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-      } md:relative md:translate-x-0`}>
-        
+      } md:relative md:translate-x-0 print:hidden`}> 
         <button 
           onClick={() => setIsMobileMenuOpen(false)} 
           className="absolute top-4 right-4 md:hidden p-1.5 hover:bg-white/10 rounded-full"
@@ -241,8 +240,10 @@ export default function Dashboard({ onLogout, userEmail }) {
       </div>
 
       {/* MAIN CONTENT */}
-      <div className="flex-1 flex flex-col overflow-y-auto w-full">
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 md:px-8 py-4 flex justify-between items-center transition-colors sticky top-0 z-30">
+      <div className="flex-1 flex flex-col overflow-y-auto w-full print:overflow-visible print:w-full print:static">
+        
+        {/* HEADER */}
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 md:px-8 py-4 flex justify-between items-center transition-colors sticky top-0 z-30 print:hidden">
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setIsMobileMenuOpen(true)} 
@@ -272,7 +273,7 @@ export default function Dashboard({ onLogout, userEmail }) {
               </button>
 
               {isProfileDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 overflow-hidden print:hidden">
                   <div className="p-3 border-b border-gray-100 dark:border-gray-700">
                     <p className="text-sm font-bold text-gray-800 dark:text-white">{currentUser?.name}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{currentUser?.email}</p>
@@ -304,7 +305,7 @@ export default function Dashboard({ onLogout, userEmail }) {
           </div>
         </header>
 
-        <main className="p-4 md:p-8">
+        <main className="p-4 md:p-8 print:p-0 print:m-0">
           {activeMenu === 'Dashboard' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
@@ -432,14 +433,13 @@ export default function Dashboard({ onLogout, userEmail }) {
             </div>
           )}
 
-          {/* BAGONG LOW STOCK ROUTE */}
           {activeMenu === 'Low Stock' && (
             <LowStock 
               items={items} 
               onGoToItems={() => setActiveMenu('Items')}
               onRestockClick={(item) => {
-                setInitialStockItem(item); // I-set ang item na i-rerestock
-                setActiveMenu('Items');    // Pumunta sa Items page
+                setInitialStockItem(item);
+                setActiveMenu('Items');
               }}
             />
           )}
