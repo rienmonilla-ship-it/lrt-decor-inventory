@@ -17,7 +17,7 @@ import NotificationBell from './NotificationBell';
 import ThemeToggle from './ThemeToggle';
 import ActivityLogs from './ActivityLogs'; 
 import UserProfileModal from './UserProfileModal'; 
-import LowStock from './LowStock'; // BAGONG IMPORT
+import LowStock from './LowStock';
 
 export default function Dashboard({ onLogout, userEmail }) {
   const [activeMenu, setActiveMenu] = useState('Dashboard');
@@ -33,6 +33,9 @@ export default function Dashboard({ onLogout, userEmail }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
   
   const [isLoading, setIsLoading] = useState(true);
+
+  // BAGONG STATE PARA SA RESTOCK REDIRECT
+  const [initialStockItem, setInitialStockItem] = useState(null);
 
   // --- IDLE TIMEOUT LOGIC ---
   useEffect(() => {
@@ -112,7 +115,7 @@ export default function Dashboard({ onLogout, userEmail }) {
   const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'staff'] },
     { name: 'Items', icon: Package, roles: ['admin', 'staff'] },
-    { name: 'Low Stock', icon: AlertTriangle, roles: ['admin', 'staff'] }, // BAGONG MENU
+    { name: 'Low Stock', icon: AlertTriangle, roles: ['admin', 'staff'] }, 
     { name: 'Stock Movements', icon: ArrowRightLeft, roles: ['admin', 'staff'] },
     { name: 'Projects', icon: FolderKanban, roles: ['admin', 'staff'] },
     { name: 'Suppliers', icon: Truck, roles: ['admin'] }, 
@@ -332,7 +335,6 @@ export default function Dashboard({ onLogout, userEmail }) {
                   <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg"><TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" /></div>
                 </div>
                 
-                {/* DITO BINAGO: Papuntang Low Stock Page */}
                 <div onClick={() => setActiveMenu('Low Stock')} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex justify-between items-start cursor-pointer hover:shadow-md hover:border-yellow-500 transition-all">
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Low Stock</p>
@@ -430,23 +432,26 @@ export default function Dashboard({ onLogout, userEmail }) {
             </div>
           )}
 
-          {/* --- ROUTING NG MGA PAGES --- */}
-          {activeMenu === 'Items' && (
-            <Items 
-              items={items} 
-              defaultFilterLowStock={false} // Pinalitan natin ng false para normal A-Z sa Items page
-              currentUserName={displayName} 
-              userRole={userRole} 
-              projects={projects} 
-            />
-          )}
-
-          {/* BAGONG LOW STOCK PAGE */}
+          {/* BAGONG LOW STOCK ROUTE */}
           {activeMenu === 'Low Stock' && (
             <LowStock 
               items={items} 
               onGoToItems={() => setActiveMenu('Items')}
-              onRestockClick={() => setActiveMenu('Items')} // Dadalhin muna sa Items page para mag-stock in
+              onRestockClick={(item) => {
+                setInitialStockItem(item); // I-set ang item na i-rerestock
+                setActiveMenu('Items');    // Pumunta sa Items page
+              }}
+            />
+          )}
+
+          {activeMenu === 'Items' && (
+            <Items 
+              items={items} 
+              currentUserName={displayName} 
+              userRole={userRole} 
+              projects={projects} 
+              initialStockItem={initialStockItem}
+              clearInitialStockItem={() => setInitialStockItem(null)}
             />
           )}
           

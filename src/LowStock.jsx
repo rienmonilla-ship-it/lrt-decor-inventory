@@ -1,10 +1,10 @@
-import { AlertTriangle, ArrowRightLeft, ShoppingCart } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, ShoppingCart } from 'lucide-react';
 
-export default function LowStock({ items, setActiveMenu, openStockModal }) {
+export default function LowStock({ items, onGoToItems, onRestockClick }) {
   // Kunin lahat ng low stock items at i-sort (pinaka-ubos muna)
   const lowStockItems = items
     .filter(item => item.qty <= item.min)
-    .sort((a, b) => (a.qty / a.min) - (b.qty / b.min)); 
+    .sort((a, b) => (a.qty / (a.min || 1)) - (b.qty / (b.min || 1))); 
 
   return (
     <div className="p-4 md:p-8 space-y-6">
@@ -19,7 +19,7 @@ export default function LowStock({ items, setActiveMenu, openStockModal }) {
           </p>
         </div>
         <button 
-          onClick={() => setActiveMenu('Items')} 
+          onClick={onGoToItems} // Naka-function na ito
           className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >
           Back to All Items
@@ -31,9 +31,9 @@ export default function LowStock({ items, setActiveMenu, openStockModal }) {
           <thead>
             <tr className="bg-red-50 dark:bg-red-900/20 border-b border-gray-200 dark:border-gray-700 text-xs text-red-600 dark:text-red-400 uppercase tracking-wider">
               <th className="p-4 font-semibold">Item Name</th>
-              <th className="p-4 font-semibold">Category</th>
+              <th className="p-4 font-semibold hidden md:table-cell">Category</th>
               <th className="p-4 font-semibold text-center">Current Stock</th>
-              <th className="p-4 font-semibold text-center">Min Stock</th>
+              <th className="p-4 font-semibold text-center hidden md:table-cell">Min Stock</th>
               <th className="p-4 font-semibold text-center">Suggested Order</th>
               <th className="p-4 font-semibold text-center sticky right-0 bg-red-50 dark:bg-red-900/20 border-l border-gray-200 dark:border-gray-700">Action</th>
             </tr>
@@ -41,7 +41,6 @@ export default function LowStock({ items, setActiveMenu, openStockModal }) {
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {lowStockItems.length > 0 ? (
               lowStockItems.map((item) => {
-                // Compute kung ilan ang kulang para umabot sa minimum
                 const suggestedOrder = item.min - item.qty > 0 ? (item.min - item.qty) * 2 : item.min; 
 
                 return (
@@ -50,7 +49,7 @@ export default function LowStock({ items, setActiveMenu, openStockModal }) {
                       <p className="font-semibold text-gray-800 dark:text-white text-sm">{item.name}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{item.spec} · {item.unit}</p>
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 hidden md:table-cell">
                       <span className="inline-block px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-md border border-gray-200 dark:border-gray-600 whitespace-nowrap">
                         {item.category}
                       </span>
@@ -60,7 +59,7 @@ export default function LowStock({ items, setActiveMenu, openStockModal }) {
                         {item.qty}
                       </span>
                     </td>
-                    <td className="p-4 text-center text-sm font-semibold text-gray-600 dark:text-gray-400">
+                    <td className="p-4 text-center text-sm font-semibold text-gray-600 dark:text-gray-400 hidden md:table-cell">
                       {item.min}
                     </td>
                     <td className="p-4 text-center">
@@ -70,10 +69,10 @@ export default function LowStock({ items, setActiveMenu, openStockModal }) {
                     </td>
                     <td className="p-4 text-center sticky right-0 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.1)]">
                       <button 
-                        onClick={() => openStockModal(item, 'IN')} 
+                        onClick={() => onRestockClick(item)} // <--- IPAPASA NATIN YUNG ITEM
                         className="inline-flex items-center gap-1 bg-green-700 hover:bg-green-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
                       >
-                        <ArrowRightLeft className="w-3 h-3" /> Restock Now
+                        <ArrowUpRight className="w-3 h-3" /> Restock Now
                       </button>
                     </td>
                   </tr>

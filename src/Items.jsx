@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Edit, Trash2, ArrowDownLeft, ArrowUpRight, ScanLine, QrCode, Upload } from 'lucide-react'; 
 import { collection, addDoc, updateDoc, deleteDoc, doc, increment, getDoc } from "firebase/firestore"; 
 import { db } from './firebase';
@@ -12,7 +12,7 @@ import ConfirmModal from './ConfirmModal';
 import ScanActionModal from './ScanActionModal';
 import BulkImportModal from './BulkImportModal';
 
-export default function Items({ items, currentUserName, userRole, projects }) {
+export default function Items({ items, currentUserName, userRole, projects, initialStockItem, clearInitialStockItem }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('All categories');
   
@@ -40,6 +40,16 @@ export default function Items({ items, currentUserName, userRole, projects }) {
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+
+  // BAGONG EFFECT PARA SA RESTOCK REDIRECT
+  useEffect(() => {
+    if (initialStockItem) {
+      setStockItem(initialStockItem);
+      setStockType('IN');
+      setIsStockModalOpen(true);
+      if (clearInitialStockItem) clearInitialStockItem(); // Clear para hindi mag-loop
+    }
+  }, [initialStockItem, clearInitialStockItem]);
 
   const calculateTotalValue = () => {
     return items.reduce((total, item) => total + (item.qty * item.price), 0).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
@@ -201,9 +211,7 @@ export default function Items({ items, currentUserName, userRole, projects }) {
     }, 100);
   };
 
-  // ==========================================
-  // NORMAL A-Z SORTING NA LANG (WALA NANG LOW STOCK PRIORITY)
-  // ==========================================
+  // NORMAL A-Z SORTING NA LANG
   const filteredItems = items
     .filter(item => {
       const matchSearch = 
@@ -216,7 +224,6 @@ export default function Items({ items, currentUserName, userRole, projects }) {
       return matchSearch && matchCategory;
     })
     .sort((a, b) => {
-      // Purong A-Z Alphabetical Sorting
       return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
     });
 
