@@ -92,7 +92,7 @@ export default function ProjectMaterialsModal({ isOpen, onClose, project, moveme
         
         {/* Header */}
         <div className="mb-4">
-          <h1 className="text-2xl font-bold uppercase">LRT Décor Products</h1>
+          <h1 className="text-2xl font-bold uppercase">LRT Decor Products</h1>
           <div className="flex justify-between text-sm mt-2">
             <div>
               <p><strong>Client:</strong> {project.client}</p>
