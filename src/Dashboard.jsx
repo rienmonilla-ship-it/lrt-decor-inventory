@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   LayoutDashboard, Package, ArrowRightLeft, FolderKanban, 
-  Truck, FileText, Users, LogOut, ArrowDownLeft, ArrowUpRight, Activity, ChevronDown, Menu, X, Loader2, TrendingUp
+  Truck, FileText, Users, LogOut, ArrowDownLeft, ArrowUpRight, Activity, ChevronDown, Menu, X, Loader2, TrendingUp, AlertTriangle
 } from 'lucide-react';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { collection, onSnapshot } from "firebase/firestore";
@@ -17,6 +17,7 @@ import NotificationBell from './NotificationBell';
 import ThemeToggle from './ThemeToggle';
 import ActivityLogs from './ActivityLogs'; 
 import UserProfileModal from './UserProfileModal'; 
+import LowStock from './LowStock'; // BAGONG IMPORT
 
 export default function Dashboard({ onLogout, userEmail }) {
   const [activeMenu, setActiveMenu] = useState('Dashboard');
@@ -104,7 +105,6 @@ export default function Dashboard({ onLogout, userEmail }) {
   const displayName = currentUser ? currentUser.name.split(' ')[0] : 'User';
   const userRole = currentUser ? currentUser.role : 'staff';
 
-  // BINALIK SA DATING SIMPLENG LOGOUT
   const handleLogout = () => {
     onLogout();
   };
@@ -112,6 +112,7 @@ export default function Dashboard({ onLogout, userEmail }) {
   const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'staff'] },
     { name: 'Items', icon: Package, roles: ['admin', 'staff'] },
+    { name: 'Low Stock', icon: AlertTriangle, roles: ['admin', 'staff'] }, // BAGONG MENU
     { name: 'Stock Movements', icon: ArrowRightLeft, roles: ['admin', 'staff'] },
     { name: 'Projects', icon: FolderKanban, roles: ['admin', 'staff'] },
     { name: 'Suppliers', icon: Truck, roles: ['admin'] }, 
@@ -292,7 +293,7 @@ export default function Dashboard({ onLogout, userEmail }) {
             <ThemeToggle />
             <NotificationBell 
               lowStockItems={lowStockItems} 
-              onViewItems={() => setActiveMenu('Items')} 
+              onViewItems={() => setActiveMenu('Low Stock')} 
             />
             <div className="hidden sm:flex items-center gap-2 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full text-xs font-semibold">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Cloud Live
@@ -331,11 +332,12 @@ export default function Dashboard({ onLogout, userEmail }) {
                   <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg"><TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" /></div>
                 </div>
                 
-                <div onClick={() => setActiveMenu('Items')} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex justify-between items-start cursor-pointer hover:shadow-md hover:border-yellow-500 transition-all">
+                {/* DITO BINAGO: Papuntang Low Stock Page */}
+                <div onClick={() => setActiveMenu('Low Stock')} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex justify-between items-start cursor-pointer hover:shadow-md hover:border-yellow-500 transition-all">
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Low Stock</p>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{lowStockCount}</h2>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Click to view items</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Click to view low stock</p>
                   </div>
                   <div className="p-2 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg"><ArrowDownLeft className="w-5 h-5 text-yellow-600 dark:text-yellow-400" /></div>
                 </div>
@@ -428,13 +430,23 @@ export default function Dashboard({ onLogout, userEmail }) {
             </div>
           )}
 
+          {/* --- ROUTING NG MGA PAGES --- */}
           {activeMenu === 'Items' && (
             <Items 
               items={items} 
-              defaultFilterLowStock={lowStockCount > 0} 
+              defaultFilterLowStock={false} // Pinalitan natin ng false para normal A-Z sa Items page
               currentUserName={displayName} 
               userRole={userRole} 
               projects={projects} 
+            />
+          )}
+
+          {/* BAGONG LOW STOCK PAGE */}
+          {activeMenu === 'Low Stock' && (
+            <LowStock 
+              items={items} 
+              onGoToItems={() => setActiveMenu('Items')}
+              onRestockClick={() => setActiveMenu('Items')} // Dadalhin muna sa Items page para mag-stock in
             />
           )}
           

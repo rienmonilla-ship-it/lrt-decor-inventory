@@ -12,7 +12,7 @@ import ConfirmModal from './ConfirmModal';
 import ScanActionModal from './ScanActionModal';
 import BulkImportModal from './BulkImportModal';
 
-export default function Items({ items, defaultFilterLowStock, currentUserName, userRole, projects }) {
+export default function Items({ items, currentUserName, userRole, projects }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('All categories');
   
@@ -201,6 +201,9 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
     }, 100);
   };
 
+  // ==========================================
+  // NORMAL A-Z SORTING NA LANG (WALA NANG LOW STOCK PRIORITY)
+  // ==========================================
   const filteredItems = items
     .filter(item => {
       const matchSearch = 
@@ -213,12 +216,7 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
       return matchSearch && matchCategory;
     })
     .sort((a, b) => {
-      if (defaultFilterLowStock) {
-        const aLow = a.qty <= a.min;
-        const bLow = b.qty <= b.min;
-        if (aLow && !bLow) return -1;
-        if (!aLow && bLow) return 1;
-      }
+      // Purong A-Z Alphabetical Sorting
       return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
     });
 
@@ -285,7 +283,6 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
               filteredItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                   
-                  {/* ITO NA ULIT ANG DATING SIMPLENG TD */}
                   <td className="p-4">
                     <p className="font-semibold text-gray-800 dark:text-white text-sm">{item.name}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</p>
