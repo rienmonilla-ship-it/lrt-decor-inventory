@@ -75,10 +75,15 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
   const handleDeleteItem = async (id, name) => {
     try {
       const itemRef = doc(db, "items", id);
+      
+      // SENIOR TIP: Bawasan ang network calls. 
+      // Hindi na natin kailangan mag-getDoc bago mag-delete kung may UI confirmation naman.
+      // Pero kinukuha pa rin natin ang data para sa Undo functionality.
       const itemSnapshot = await getDoc(itemRef);
+      if (!itemSnapshot.exists()) {
+        throw new Error("Item does not exist in database.");
+      }
       const itemData = itemSnapshot.data();
-
-      if (!itemData) throw new Error("Item not found.");
 
       await deleteDoc(itemRef);
       
@@ -106,7 +111,12 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
 
     } catch (error) {
       console.error("Error deleting item: ", error);
-      setToast({ message: `Failed to delete item: ${error.message}`, type: 'error' });
+      // SENIOR TIP: Mas detalyadong error message para sa user
+      let errorMsg = 'Failed to delete item.';
+      if (error.code === 'permission-denied') {
+        errorMsg = 'Access Denied: You do not have admin privileges to delete items.';
+      }
+      setToast({ message: errorMsg, type: 'error' });
     }
   };
 
