@@ -14,7 +14,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Initialize App Check gamit ang Enterprise Provider
+// Enterprise App Check Integration
 initializeAppCheck(app, {
   provider: new ReCaptchaEnterpriseProvider('6LcTaTEuAAAAAIHkX8bxf5sj02mBwOgjsngsQX_i'), 
   isTokenAutoRefreshEnabled: true

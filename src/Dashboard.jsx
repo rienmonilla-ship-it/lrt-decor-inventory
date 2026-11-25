@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   LayoutDashboard, Package, ArrowRightLeft, FolderKanban, 
-  Truck, FileText, Users, LogOut, ArrowDownLeft, ArrowUpRight, Activity, ChevronDown, Menu, X, Loader2
+  Truck, FileText, Users, LogOut, ArrowDownLeft, ArrowUpRight, Activity, ChevronDown, Menu, X, Loader2, TrendingUp, AlertTriangle
 } from 'lucide-react';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { collection, onSnapshot } from "firebase/firestore";
@@ -17,6 +17,7 @@ import NotificationBell from './NotificationBell';
 import ThemeToggle from './ThemeToggle';
 import ActivityLogs from './ActivityLogs'; 
 import UserProfileModal from './UserProfileModal'; 
+import LowStock from './LowStock';
 
 export default function Dashboard({ onLogout, userEmail }) {
   const [activeMenu, setActiveMenu] = useState('Dashboard');
@@ -32,7 +33,38 @@ export default function Dashboard({ onLogout, userEmail }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
   
   const [isLoading, setIsLoading] = useState(true);
+  const [initialStockItem, setInitialStockItem] = useState(null);
 
+  // --- IDLE TIMEOUT LOGIC ---
+  useEffect(() => {
+    let idleTimer;
+    const IDLE_TIMEOUT = 30 * 60 * 1000; 
+
+    const resetTimer = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        alert("You have been logged out due to inactivity.");
+        handleLogout(); 
+      }, IDLE_TIMEOUT);
+    };
+
+    window.addEventListener('mousemove', resetTimer);
+    window.addEventListener('keydown', resetTimer);
+    window.addEventListener('click', resetTimer);
+    window.addEventListener('scroll', resetTimer);
+
+    resetTimer();
+
+    return () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      window.removeEventListener('mousemove', resetTimer);
+      window.removeEventListener('keydown', resetTimer);
+      window.removeEventListener('click', resetTimer);
+      window.removeEventListener('scroll', resetTimer);
+    };
+  }, [onLogout]);
+
+  // --- KONEKSYON SA FIREBASE ---
   useEffect(() => {
     const unsubItems = onSnapshot(collection(db, "items"), (snapshot) => {
       setItems(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
@@ -74,9 +106,14 @@ export default function Dashboard({ onLogout, userEmail }) {
   const displayName = currentUser ? currentUser.name.split(' ')[0] : 'User';
   const userRole = currentUser ? currentUser.role : 'staff';
 
+  const handleLogout = () => {
+    onLogout();
+  };
+
   const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'staff'] },
     { name: 'Items', icon: Package, roles: ['admin', 'staff'] },
+    { name: 'Low Stock', icon: AlertTriangle, roles: ['admin', 'staff'] }, 
     { name: 'Stock Movements', icon: ArrowRightLeft, roles: ['admin', 'staff'] },
     { name: 'Projects', icon: FolderKanban, roles: ['admin', 'staff'] },
     { name: 'Suppliers', icon: Truck, roles: ['admin'] }, 
@@ -89,10 +126,9 @@ export default function Dashboard({ onLogout, userEmail }) {
 
   const totalItems = items.length;
   const totalStockValue = items.reduce((total, item) => total + (item.qty * item.price), 0);
-  
+  const totalIncome = projects.reduce((sum, p) => sum + (p.contractPrice || 0), 0);
   const lowStockItems = items.filter(item => item.qty <= item.min);
   const lowStockCount = lowStockItems.length;
-  
   const activeProjects = projects.filter(p => p.status === 'Active');
   const activeProjectsCount = activeProjects.length;
 
@@ -112,16 +148,31 @@ export default function Dashboard({ onLogout, userEmail }) {
   }, [items]);
 
   const lineData = useMemo(() => {
-    const totalIn = movements.filter(m => m.type === 'IN').reduce((sum, m) => sum + m.qty, 0);
-    const totalOut = movements.filter(m => m.type === 'OUT').reduce((sum, m) => sum + m.qty, 0);
-    
-    return [
-      { name: 'Day 1', in: 0, out: 0 },
-      { name: 'Day 2', in: 0, out: 0 },
-      { name: 'Day 3', in: totalIn > 0 ? totalIn * 0.2 : 0, out: 0 },
-      { name: 'Day 4', in: totalIn > 0 ? totalIn * 0.5 : 0, out: 0 },
-      { name: 'Today', in: totalIn, out: totalOut },
-    ];
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      last7Days.push({
+        label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        fullDate: date.toDateString(),
+        in: 0,
+        out: 0
+      });
+    }
+
+    movements.forEach(move => {
+      const moveDate = new Date(move.date).toDateString();
+      const dayData = last7Days.find(d => d.fullDate === moveDate);
+      if (dayData) {
+        if (move.type === 'IN') {
+          dayData.in += move.qty;
+        } else if (move.type === 'OUT') {
+          dayData.out += move.qty;
+        }
+      }
+    });
+
+    return last7Days.map(d => ({ name: d.label, in: d.in, out: d.out }));
   }, [movements]);
 
   if (isLoading) {
@@ -145,7 +196,7 @@ export default function Dashboard({ onLogout, userEmail }) {
         ></div>
       )}
 
-      {/* SIDEBAR - Responsive */}
+      {/* SIDEBAR */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0e2a21] text-white flex flex-col justify-between border-r border-[#184536] transform transition-transform duration-300 ease-in-out ${
         isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
       } md:relative md:translate-x-0`}>
@@ -181,7 +232,7 @@ export default function Dashboard({ onLogout, userEmail }) {
           </nav>
         </div>
         <div className="p-4 border-t border-green-900">
-          <button onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
             <LogOut className="w-4 h-4" /> Sign out
           </button>
         </div>
@@ -189,7 +240,6 @@ export default function Dashboard({ onLogout, userEmail }) {
 
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col overflow-y-auto w-full">
-        {/* STICKY HEADER */}
         <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 md:px-8 py-4 flex justify-between items-center transition-colors sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <button 
@@ -232,7 +282,7 @@ export default function Dashboard({ onLogout, userEmail }) {
                     Profile Settings
                   </button>
                   <button 
-                    onClick={onLogout}
+                    onClick={handleLogout}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                   >
                     Sign Out
@@ -244,7 +294,7 @@ export default function Dashboard({ onLogout, userEmail }) {
             <ThemeToggle />
             <NotificationBell 
               lowStockItems={lowStockItems} 
-              onViewItems={() => setActiveMenu('Items')} 
+              onViewItems={() => setActiveMenu('Low Stock')} 
             />
             <div className="hidden sm:flex items-center gap-2 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full text-xs font-semibold">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Cloud Live
@@ -255,7 +305,7 @@ export default function Dashboard({ onLogout, userEmail }) {
         <main className="p-4 md:p-8">
           {activeMenu === 'Dashboard' && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
                 <div onClick={() => setActiveMenu('Items')} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex justify-between items-start cursor-pointer hover:shadow-md hover:border-green-500 transition-all">
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Items</p>
@@ -273,12 +323,21 @@ export default function Dashboard({ onLogout, userEmail }) {
                   </div>
                   <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg"><ArrowUpRight className="w-5 h-5 text-green-600 dark:text-green-400" /></div>
                 </div>
+
+                <div onClick={() => setActiveMenu('Reports')} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex justify-between items-start cursor-pointer hover:shadow-md hover:border-green-500 transition-all">
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Income</p>
+                    <h2 className="text-2xl font-bold text-green-600 mt-1">₱{totalIncome.toLocaleString()}</h2>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">From all projects</p>
+                  </div>
+                  <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg"><TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" /></div>
+                </div>
                 
-                <div onClick={() => setActiveMenu('Items')} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex justify-between items-start cursor-pointer hover:shadow-md hover:border-yellow-500 transition-all">
+                <div onClick={() => setActiveMenu('Low Stock')} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex justify-between items-start cursor-pointer hover:shadow-md hover:border-yellow-500 transition-all">
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Low Stock</p>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{lowStockCount}</h2>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Click to view items</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Click to view low stock</p>
                   </div>
                   <div className="p-2 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg"><ArrowDownLeft className="w-5 h-5 text-yellow-600 dark:text-yellow-400" /></div>
                 </div>
@@ -371,13 +430,25 @@ export default function Dashboard({ onLogout, userEmail }) {
             </div>
           )}
 
+          {activeMenu === 'Low Stock' && (
+            <LowStock 
+              items={items} 
+              onGoToItems={() => setActiveMenu('Items')}
+              onRestockClick={(item) => {
+                setInitialStockItem(item);
+                setActiveMenu('Items');
+              }}
+            />
+          )}
+
           {activeMenu === 'Items' && (
             <Items 
               items={items} 
-              defaultFilterLowStock={lowStockCount > 0} 
               currentUserName={displayName} 
               userRole={userRole} 
               projects={projects} 
+              initialStockItem={initialStockItem}
+              clearInitialStockItem={() => setInitialStockItem(null)}
             />
           )}
           
@@ -390,9 +461,17 @@ export default function Dashboard({ onLogout, userEmail }) {
             />
           )}
           
-          {activeMenu === 'Projects' && <Projects projects={projects} userRole={userRole} />}
+          {activeMenu === 'Projects' && (
+            <Projects 
+              projects={projects} 
+              movements={movements} 
+              items={items} 
+              userRole={userRole} 
+            />
+          )}
+          
           {activeMenu === 'Suppliers' && <Suppliers userRole={userRole} />}
-          {activeMenu === 'Reports' && <Reports items={items} movements={movements} />}
+          {activeMenu === 'Reports' && <Reports items={items} movements={movements} projects={projects} />}
           {activeMenu === 'Users' && <UsersPage />}
           {activeMenu === 'Activity Logs' && <ActivityLogs logs={logs} />}
         </main>

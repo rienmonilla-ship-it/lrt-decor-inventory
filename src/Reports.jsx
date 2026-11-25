@@ -1,7 +1,8 @@
 import { Download } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { formatCurrency } from './formatCurrency';
 
-export default function Reports({ items, movements }) {
+export default function Reports({ items, movements, projects }) {
   
   const categoryData = items.reduce((acc, item) => {
     const existing = acc.find(a => a.name === item.category);
@@ -21,19 +22,24 @@ export default function Reports({ items, movements }) {
   const stockInCount = movements?.filter(m => m.type === 'IN').length || 0;
   const stockOutCount = movements?.filter(m => m.type === 'OUT').length || 0;
 
+  const totalIncome = projects.reduce((sum, p) => sum + (p.contractPrice || 0), 0);
+  const totalExpenses = projects.reduce((sum, p) => sum + (p.cost || 0), 0);
+  const totalProfit = totalIncome - totalExpenses;
+
   const handleExportCSV = () => {
     const date = new Date().toLocaleString();
     let csvContent = "";
 
-    // --- HEADER ---
     csvContent += "LRT DECOR PRODUCTS - INVENTORY REPORT\n";
     csvContent += `Generated on: ${date}\n`;
     csvContent += `Total Items: ${items.length}\n`;
     csvContent += `Total Value: PHP ${items.reduce((total, item) => total + (item.qty * item.price), 0).toLocaleString()}\n`;
     csvContent += `Stock In Transactions: ${stockInCount}\n`;
-    csvContent += `Stock Out Transactions: ${stockOutCount}\n\n`;
+    csvContent += `Stock Out Transactions: ${stockOutCount}\n`;
+    csvContent += `Total Income: PHP ${totalIncome.toLocaleString()}\n`;
+    csvContent += `Total Expenses: PHP ${totalExpenses.toLocaleString()}\n`;
+    csvContent += `Total Profit: PHP ${totalProfit.toLocaleString()}\n\n`;
 
-    // --- CATEGORY SECTION ---
     csvContent += "INVENTORY VALUE BY CATEGORY\n";
     csvContent += "Category,Value (PHP)\n";
     categoryData.forEach(row => {
@@ -41,14 +47,12 @@ export default function Reports({ items, movements }) {
     });
     csvContent += "\n";
 
-    // --- TOP ITEMS SECTION ---
     csvContent += "TOP 10 HIGHEST VALUE ITEMS\n";
     csvContent += "Item Name,Value (PHP)\n";
     topItemsData.forEach(row => {
       csvContent += `"${row.name}","${row.value.toLocaleString()}"\n`;
     });
 
-    // --- DOWNLOAD ---
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -60,7 +64,7 @@ export default function Reports({ items, movements }) {
   };
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-6">
       <div className="flex justify-between items-end">
         <div>
           <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold tracking-wider uppercase mb-1">Insights</p>
@@ -71,6 +75,21 @@ export default function Reports({ items, movements }) {
         </button>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Income</p>
+          <h2 className="text-2xl font-bold text-green-600 mt-1">{formatCurrency(totalIncome)}</h2>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Expenses</p>
+          <h2 className="text-2xl font-bold text-red-600 mt-1">{formatCurrency(totalExpenses)}</h2>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Profit</p>
+          <h2 className={`text-2xl font-bold mt-1 ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(totalProfit)}</h2>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Items</p>
@@ -78,14 +97,14 @@ export default function Reports({ items, movements }) {
         </div>
         <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Total Value</p>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">₱{items.reduce((total, item) => total + (item.qty * item.price), 0).toLocaleString()}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{formatCurrency(items.reduce((total, item) => total + (item.qty * item.price), 0))}</h2>
         </div>
         <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Stock IN Transactions</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Stock In Transactions</p>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stockInCount}</h2>
         </div>
         <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Stock OUT Transactions</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Stock Out Transactions</p>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stockOutCount}</h2>
         </div>
       </div>
@@ -98,7 +117,7 @@ export default function Reports({ items, movements }) {
               <BarChart data={categoryData} layout="vertical" margin={{ top: 0, right: 0, left: 40, bottom: 0 }}>
                 <XAxis type="number" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#888'}} tickFormatter={(val) => `${val/1000}k`} />
                 <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#666'}} width={130} />
-                <Tooltip cursor={{fill: 'transparent'}} formatter={(val) => `₱${val.toLocaleString()}`} />
+                <Tooltip cursor={{fill: 'transparent'}} formatter={(val) => formatCurrency(val)} />
                 <Bar dataKey="value" fill="#1b4d3e" radius={[0, 4, 4, 0]} barSize={20}>
                   {categoryData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={index === 0 ? '#1b4d3e' : '#40916c'} />
@@ -116,7 +135,7 @@ export default function Reports({ items, movements }) {
               <BarChart data={topItemsData} layout="vertical" margin={{ top: 0, right: 30, left: 60, bottom: 0 }}>
                 <XAxis type="number" hide />
                 <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#333', fontWeight: 'bold'}} width={130} />
-                <Tooltip cursor={{fill: 'transparent'}} formatter={(val) => `₱${val.toLocaleString()}`} />
+                <Tooltip cursor={{fill: 'transparent'}} formatter={(val) => formatCurrency(val)} />
                 <Bar dataKey="value" fill="#1b4d3e" radius={[0, 4, 4, 0]} barSize={12} />
               </BarChart>
             </ResponsiveContainer>

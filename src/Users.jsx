@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Shield, User, Trash2, Edit } from 'lucide-react';
 import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { createUserWithEmailAndPassword, getAuth } from "firebase/auth"; 
+import { createUserWithEmailAndPassword, getAuth, deleteUser, signInWithEmailAndPassword } from "firebase/auth"; 
 import { db } from './firebase'; 
 import UserModal from './UserModal';
 import ConfirmModal from './ConfirmModal';
@@ -56,19 +56,32 @@ export default function UsersPage() {
     }
   };
 
+  // BAGONG LOGIC PARA SA DELETE (Kasama ang Firebase Auth)
   const confirmDelete = async () => {
     if (!userToDelete) return;
+    
     try {
+      // 1. I-delete sa Firestore (users collection)
       await deleteDoc(doc(db, "users", userToDelete.id));
-      setToast({ message: 'User removed.', type: 'success' });
+      
+      // 2. I-delete sa Firebase Authentication (kung may UID)
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      
+      // Kung ang naka-login na user ay ang tatanggalin, i-sign out muna
+      if (currentUser && currentUser.email === userToDelete.email) {
+        await auth.signOut();
+      }
+      
+      setToast({ message: 'User deleted successfully!', type: 'success' });
     } catch (error) {
       console.error("Error deleting user: ", error);
       setToast({ message: 'Failed to delete user.', type: 'error' });
     }
   };
 
-  const handleDeleteClick = (id, name) => {
-    setUserToDelete({ id, name });
+  const handleDeleteClick = (id, name, email) => {
+    setUserToDelete({ id, name, email });
     setIsConfirmOpen(true);
   };
 
@@ -124,13 +137,16 @@ export default function UsersPage() {
                     <button onClick={() => openEditModal(user)} className="p-1.5 text-gray-400 hover:text-blue-600 rounded transition-colors">
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDeleteClick(user.id, user.name)} className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors">
+                    <button onClick={() => handleDeleteClick(user.id, user.name, user.email)} className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </td>
               </tr>
             ))}
+            {users.length === 0 && (
+               <tr><td colSpan="5" className="p-8 text-center text-gray-500 dark:text-gray-400">No users found in database.</td></tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -149,7 +165,7 @@ export default function UsersPage() {
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={confirmDelete}
         title="Remove User"
-        message={`Are you sure you want to remove "${userToDelete?.name}" from the system?`}
+        message={`Are you sure you want to remove "${userToDelete?.name}" from the system? This action cannot be undone.`}
         confirmText="Remove User"
       />
 

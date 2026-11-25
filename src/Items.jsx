@@ -114,8 +114,7 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
     try {
       const itemRef = doc(db, "items", item.id);
       
-      // CRITICAL UPDATE: Gamitin ang increment() para iwasan ang race condition.
-      // Kung ang type ay 'IN', positive ang value. Kung 'OUT', negative.
+      // GAMITIN ANG INCREMENT PARA SAFE SA SABAY-SABAY NA UPDATE
       const qtyChange = type === 'IN' ? qty : -qty;
       
       await updateDoc(itemRef, { 

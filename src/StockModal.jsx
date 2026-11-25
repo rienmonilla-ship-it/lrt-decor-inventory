@@ -1,36 +1,36 @@
 import { useState } from 'react';
-import { X, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { X, ArrowDownLeft, ArrowUpRight, AlertCircle } from 'lucide-react';
 
 export default function StockModal({ isOpen, onClose, onConfirm, item, type, projects }) {
   const [qty, setQty] = useState(1);
   const [reason, setReason] = useState('');
   const [selectedProject, setSelectedProject] = useState('');
+  const [error, setError] = useState('');
 
   if (!isOpen || !item) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setError('');
     
-    // VALIDATION: Dapat positive number at hindi zero
     const quantity = Number(qty);
     if (!quantity || quantity <= 0) {
-      return alert("Quantity must be a positive number greater than 0.");
+      return setError("Quantity must be a positive number greater than 0.");
     }
     
-    // VALIDATION: Hindi pwedeng mag-Stock Out ng mas marami sa stock
     if (type === 'OUT' && quantity > item.qty) {
-      return alert(`Not enough stock! Only ${item.qty} ${item.unit} available.`);
+      return setError(`Not enough stock! Only ${item.qty} ${item.unit} available.`);
     }
 
-    // VALIDATION: Kailangan may project kapag Stock Out
     if (type === 'OUT' && !selectedProject) {
-      return alert("Please select a project for this stock out.");
+      return setError("Please select a project for this stock out.");
     }
 
     onConfirm(item, type, quantity, reason, selectedProject);
     setQty(1);
     setReason('');
     setSelectedProject('');
+    setError('');
   };
 
   return (
@@ -48,8 +48,14 @@ export default function StockModal({ isOpen, onClose, onConfirm, item, type, pro
           <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">Item</p>
             <p className="font-bold text-gray-800 dark:text-white">{item.name}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Current Stock: <span className="font-bold">{item.qty} {item.unit}</span></p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Current Stock: <span className="font-bold">{item.qty.toLocaleString()} {item.unit}</span></p>
           </div>
+
+          {error && (
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" /> {error}
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 uppercase">Quantity to {type}</label>

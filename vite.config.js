@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    host: true, // Para ma-access sa local network (cellphone testing)
-    https: false // Hindi natin kailangan ng https sa local, pero sa production (Vercel) automatic na 'yon
+    host: true, 
+    https: false 
   }
 })
