@@ -32,7 +32,7 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
   const [isSaving, setIsSaving] = useState(false);
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState(null); // TAMANG SPELLING
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const calculateTotalValue = () => {
     return items.reduce((total, item) => total + (item.qty * item.price), 0).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
@@ -66,7 +66,7 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
       closeModal();
     } catch (error) {
       console.error("Error saving item: ", error);
-      setToast({ message: 'Failed to save item.', type: 'error' });
+      setToast({ message: `Failed to save item: ${error.message}`, type: 'error' });
     } finally {
       setIsSaving(false);
     }
@@ -77,6 +77,8 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
       const itemRef = doc(db, "items", id);
       const itemSnapshot = await getDoc(itemRef);
       const itemData = itemSnapshot.data();
+
+      if (!itemData) throw new Error("Item not found.");
 
       await deleteDoc(itemRef);
       
@@ -96,24 +98,29 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
           try {
             await addDoc(collection(db, "items"), itemData);
             setToast({ message: 'Item restored successfully!', type: 'success' });
-          } catch {
-            setToast({ message: 'Failed to restore item.', type: 'error' });
+          } catch (error) {
+            setToast({ message: `Failed to restore item: ${error.message}`, type: 'error' });
           }
         }
       });
 
     } catch (error) {
       console.error("Error deleting item: ", error);
-      setToast({ message: 'Failed to delete item.', type: 'error' });
+      setToast({ message: `Failed to delete item: ${error.message}`, type: 'error' });
     }
   };
 
   const handleStockConfirm = async (item, type, qty, reason, projectId) => {
     try {
       const itemRef = doc(db, "items", item.id);
-      const newQty = type === 'IN' ? item.qty + qty : item.qty - qty;
       
-      await updateDoc(itemRef, { qty: newQty });
+      // CRITICAL UPDATE: Gamitin ang increment() para iwasan ang race condition.
+      // Kung ang type ay 'IN', positive ang value. Kung 'OUT', negative.
+      const qtyChange = type === 'IN' ? qty : -qty;
+      
+      await updateDoc(itemRef, { 
+        qty: increment(qtyChange) 
+      });
 
       const projectName = projects.find(p => p.id === projectId)?.name || '-';
       
@@ -158,7 +165,7 @@ export default function Items({ items, defaultFilterLowStock, currentUserName, u
       }
     } catch (error) {
       console.error("Error updating stock: ", error);
-      setToast({ message: 'Failed to update stock.', type: 'error' });
+      setToast({ message: `Failed to update stock: ${error.message}`, type: 'error' });
     }
   };
 
